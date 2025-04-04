@@ -56,7 +56,6 @@ const GameCard = ({ game }) => {
   // Determine game status
   const isPreGame = status.abstractGameState === 'Preview';
   const isInProgress = status.abstractGameState === 'Live';
-  const isOver = status.abstractGameState === 'Final';
 
   // Format game time
   const gameTime = gameDate ? format(new Date(gameDate), 'h:mm a') : '';

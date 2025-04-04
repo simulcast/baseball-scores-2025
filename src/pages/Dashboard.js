@@ -6,8 +6,7 @@ import {
   Box, 
   CircularProgress,
   Alert,
-  IconButton,
-  Button
+  IconButton
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
@@ -21,9 +20,6 @@ import GameCard from '../components/GameCard';
 import useGameData from '../hooks/useGameData';
 
 const Dashboard = () => {
-  // State for audio preview
-  const [previewGameId, setPreviewGameId] = useState(null);
-  
   // State for global audio mute
   const [audioMuted, setAudioMuted] = useState(false);
   
@@ -34,42 +30,6 @@ const Dashboard = () => {
     gamesError, 
     refreshGames 
   } = useGameData({});
-
-  // Sort games by status: Live > Final > Preview, and by start time within Live and Preview
-  const sortedGames = React.useMemo(() => {
-    if (!games) return [];
-    
-    const statusOrder = {
-      'Live': 0,
-      'Final': 1,
-      'Preview': 2
-    };
-    
-    return [...games].sort((a, b) => {
-      // First sort by status
-      const statusDiff = statusOrder[a.status.abstractGameState] - statusOrder[b.status.abstractGameState];
-      if (statusDiff !== 0) return statusDiff;
-      
-      // For Live and Preview games, sort by start time
-      if (a.status.abstractGameState === 'Live' || a.status.abstractGameState === 'Preview') {
-        return new Date(a.gameDate) - new Date(b.gameDate);
-      }
-      
-      // For Final games, keep original order
-      return 0;
-    });
-  }, [games]);
-
-  // Handle audio preview
-  const handlePreviewClick = (gamePk) => {
-    // If clicking the same game, toggle preview off
-    if (previewGameId === gamePk) {
-      setPreviewGameId(null);
-    } else {
-      setPreviewGameId(gamePk);
-      // In Phase 2, this is where we would start playing audio
-    }
-  };
 
   // Toggle audio mute
   const toggleAudioMute = () => {

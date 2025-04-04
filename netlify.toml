@@ -3,6 +3,9 @@
   publish = "build"
   functions = "netlify/functions"
 
+[build.environment]
+  CI = "false"
+
 [dev]
   command = "npm start"
   port = 8888

@@ -16,7 +16,6 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import GridViewIcon from '@mui/icons-material/GridView';
-import { format } from 'date-fns';
 
 // Import components
 import Scoreboard from '../components/Scoreboard';
