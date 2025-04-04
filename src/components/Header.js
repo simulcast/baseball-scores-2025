@@ -39,7 +39,7 @@ const Header = ({ onTitleClick }) => {
           Baseball Scores
         </Typography>
         <Typography 
-          variant="subtitle" 
+          variant="body" 
           sx={{ 
             opacity: 0.8,
             fontWeight: 400,
