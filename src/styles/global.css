@@ -1,0 +1,97 @@
+/* Global CSS styles */
+body {
+    margin: 0;
+    font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    background-color: #121212;
+    color: #ffffff;
+  }
+  
+  /* Baseball field colors */
+  .baseball-field {
+    --grass-color: #365314;
+    --infield-color: #a16207;
+    --base-color: #f8fafc;
+    --base-outline: #0f172a;
+    --home-plate-color: #f8fafc;
+    --runner-color: #dc2626;
+  }
+  
+  /* Pulse animation for active elements */
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  .pulse {
+    animation: pulse 2s infinite ease-in-out;
+  }
+  
+  /* Transition between pages */
+  .page-transition-enter {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  
+  .page-transition-enter-active {
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 300ms, transform 300ms;
+  }
+  
+  .page-transition-exit {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  
+  .page-transition-exit-active {
+    opacity: 0;
+    transform: translateX(-100%);
+    transition: opacity 300ms, transform 300ms;
+  }
+  
+  /* Scoreboard styling */
+  .scoreboard {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .scoreboard-inning {
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .scoreboard-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .scoreboard-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 0 3px;
+  }
+  
+  .scoreboard-indicator.active {
+    background-color: #fcd34d;
+  }
+  
+  .scoreboard-indicator.inactive {
+    background-color: #475569;
+  }
