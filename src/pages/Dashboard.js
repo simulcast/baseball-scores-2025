@@ -61,7 +61,7 @@ const Dashboard = () => {
         mb: 4
       }}>
         <Typography variant="h4" component="h1" sx={{ fontWeight: 900 }}>
-          MLB Musical Scoreboard
+          Baseball Scores
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {hasLiveGames && (

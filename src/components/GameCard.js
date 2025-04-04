@@ -58,7 +58,7 @@ const GameCard = ({ game }) => {
   const isInProgress = status.abstractGameState === 'Live';
 
   // Format game time
-  const gameTime = gameDate ? format(new Date(gameDate), 'h:mm a') : '';
+  const gameTime = gameDate ? format(new Date(gameDate), 'h:mm a', { timeZone: 'local' }) : '';
 
   // Get current inning if in progress
   const inningInfo = linescore?.currentInning 
