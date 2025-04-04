@@ -39,14 +39,14 @@ const Header = ({ onTitleClick }) => {
           Baseball Scores
         </Typography>
         <Typography 
-          variant="subtitle2" 
+          variant="subtitle" 
           sx={{ 
             opacity: 0.8,
             fontWeight: 400,
             fontStyle: 'italic'
           }}
         >
-          generative music based the state of the game
+          ambient soundtracks for the national pastime
         </Typography>
       </Stack>
     </Box>
