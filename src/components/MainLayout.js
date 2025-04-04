@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container } from '@mui/material';
 
@@ -79,18 +79,39 @@ const MainLayout = () => {
     setSelectedGameId(null);
     navigate('/');
   };
+  
+  // Handle click on container to deselect game
+  const handleContainerClick = useCallback((e) => {
+    // Only proceed if a game is selected
+    if (!selectedGameId) return;
+    
+    // Check if click was on a game card
+    const closestCard = e.target.closest('.MuiCard-root');
+    const closestGameHeader = e.target.closest('h1');
+    
+    // If click was not on a card or the header (to avoid conflicting with navigation), deselect the game
+    if (!closestCard && !closestGameHeader) {
+      setSelectedGameId(null);
+      navigate('/', { replace: true });
+    }
+  }, [selectedGameId, navigate]);
 
   return (
     <Container 
       maxWidth="xl" 
       sx={{ 
-        mt: 3, 
+        mt: 6, 
         mb: 5,
-        '@media (min-width: 1200px)': {
-          maxWidth: '95%'
+        '@media (min-width: 768px) and (max-width: 1199px)': {
+          maxWidth: '90%'
         },
-        px: { xs: 2, sm: 3 } // Consistent padding
+        '@media (min-width: 1200px)': {
+          maxWidth: '80%'
+        },
+        px: { xs: 4, sm: 5 }, // Increased padding for mobile and tablet
+        cursor: 'default' // Ensure default cursor throughout container
       }}
+      onClick={handleContainerClick}
     >
       {/* Header */}
       <Header 
