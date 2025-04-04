@@ -153,9 +153,8 @@ function App() {
       <CssBaseline />
       <Router>
         <Routes>
-          <Route path="/games" element={<Dashboard />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/games/:gameId" element={<GameView />} />
-          <Route path="*" element={<Navigate to="/games" replace />} />
         </Routes>
       </Router>
     </ThemeProvider>
