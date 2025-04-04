@@ -82,7 +82,7 @@ const GameCard = ({ game }) => {
         }}
       >
         <Chip 
-          label={isPreGame ? 'Pre-Game' : isInProgress ? inningInfo : 'Final'} 
+          label={isPreGame ? gameTime : isInProgress ? inningInfo : 'Final'} 
           color={isPreGame ? 'default' : isInProgress ? 'secondary' : 'primary'}
           size="small"
           icon={isInProgress ? <SportsBaseballIcon /> : undefined}
@@ -91,11 +91,6 @@ const GameCard = ({ game }) => {
             filter: 'none',
           }}
         />
-        {isPreGame && (
-          <Typography variant="body2" color="text.secondary">
-            {gameTime}
-          </Typography>
-        )}
       </Box>
 
       {/* Teams and scores */}
