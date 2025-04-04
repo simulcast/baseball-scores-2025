@@ -18,16 +18,6 @@ export const getTodaysGames = async (date) => {
   try {
     // Get client's timezone offset in minutes (negative for timezones ahead of UTC)
     const timezoneOffset = -new Date().getTimezoneOffset();
-    const now = new Date();
-    const localDate = new Date(now.getTime() + timezoneOffset * 60 * 1000);
-    
-    console.log('Client timezone info:', {
-      timezoneOffset,
-      currentTime: now.toISOString(),
-      localTime: localDate.toISOString(),
-      localDate: localDate.toISOString().split('T')[0]
-    });
-
     const params = date ? { date, timezoneOffset } : { timezoneOffset };
     const response = await apiClient.get('/getGames', { params });
     return response.data.games;

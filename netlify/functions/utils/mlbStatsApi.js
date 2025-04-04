@@ -15,26 +15,17 @@ const getTodaysGames = async (options = {}) => {
   try {
     // Get current date in UTC
     const now = new Date();
-    const utcDate = now.toISOString().split('T')[0];
     
     // If timezoneOffset is provided, adjust the date to the client's timezone
-    let adjustedDate = utcDate;
-    if (options.timezoneOffset !== undefined) {
+    let finalDate = options.date;
+    if (!finalDate && options.timezoneOffset !== undefined) {
       // Convert the timezone offset to milliseconds and adjust the date
       const offsetMs = options.timezoneOffset * 60 * 1000;
       const adjustedTime = new Date(now.getTime() + offsetMs);
-      adjustedDate = adjustedTime.toISOString().split('T')[0];
+      finalDate = adjustedTime.toISOString().split('T')[0];
+    } else if (!finalDate) {
+      finalDate = now.toISOString().split('T')[0];
     }
-    
-    const finalDate = options.date || adjustedDate;
-
-    console.log('MLB API date calculation:', {
-      utcDate,
-      timezoneOffset: options.timezoneOffset,
-      adjustedDate,
-      finalDate,
-      requestDate: options.date || 'using adjusted date'
-    });
 
     const response = await axios.get(`${MLB_STATS_API_BASE_URL}/schedule`, {
       params: {
@@ -42,13 +33,6 @@ const getTodaysGames = async (options = {}) => {
         date: finalDate,
         hydrate: 'team,linescore,game(content(media(epg))),probablePitcher,flags,weather,broadcasts(all)',
       }
-    });
-
-    console.log('MLB API response:', {
-      dateRequested: finalDate,
-      datesFound: response.data.dates?.length || 0,
-      firstDate: response.data.dates?.[0]?.date,
-      gamesFound: response.data.dates?.[0]?.games?.length || 0
     });
 
     // Transform the response to a simpler format
