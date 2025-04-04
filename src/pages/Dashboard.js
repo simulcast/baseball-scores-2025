@@ -76,6 +76,9 @@ const Dashboard = () => {
     setAudioMuted(!audioMuted);
   };
 
+  // Check if there are live games
+  const hasLiveGames = games.some(game => game.status.abstractGameState === 'Live');
+
   return (
     <Container 
       maxWidth="xl" 
@@ -87,54 +90,48 @@ const Dashboard = () => {
         }
       }}
     >
-      {/* Header section */}
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          mb: 3,
-          backgroundColor: 'primary.main',
-          padding: '16px 24px',
-          border: '6px solid white',
-        }}
-      >
+      {/* Header */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        border: '6px solid white',
+        background: '#2d5a27',
+        p: '16px 24px',
+        mb: 4
+      }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 900 }}>
+          MLB Musical Scoreboard
+        </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            sx={{ 
-              color: 'white',
-              margin: 0,
-              lineHeight: 1.2,
-            }}
-          >
-            Baseball Scores
-          </Typography>
-        </Box>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton 
-            onClick={toggleAudioMute} 
-            color="inherit"
-            aria-label={audioMuted ? 'Unmute' : 'Mute'}
-          >
-            {audioMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
-          </IconButton>
-          
-          <Button 
-            startIcon={<RefreshIcon />} 
-            onClick={refreshGames}
-            disabled={gamesLoading}
-            sx={{ 
-              color: 'white',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              }
-            }}
-          >
-            Refresh
-          </Button>
+          {hasLiveGames && (
+            <>
+              <IconButton 
+                onClick={toggleAudioMute} 
+                color="inherit"
+                sx={{ 
+                  border: '2px solid white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  }
+                }}
+              >
+                {audioMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+              </IconButton>
+              <IconButton 
+                onClick={refreshGames} 
+                color="inherit"
+                sx={{ 
+                  border: '2px solid white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  }
+                }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </>
+          )}
         </Box>
       </Box>
 
