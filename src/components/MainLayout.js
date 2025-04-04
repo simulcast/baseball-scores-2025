@@ -38,7 +38,7 @@ const MainLayout = () => {
     gameError
   } = useGameData({
     gamePk: selectedGameId,
-    refreshInterval: 10000
+    refreshInterval: 1000
   });
 
   // Handle game selection
