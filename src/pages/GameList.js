@@ -70,8 +70,7 @@ const GameList = ({
                 <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
                   <GameCard 
                     game={game} 
-                    isSelected={String(game.gamePk) === selectedGameId}
-                    onSelect={() => onGameSelect(String(game.gamePk))}
+                    isSelected={false}
                   />
                 </Grid>
               ))
@@ -93,8 +92,7 @@ const GameList = ({
                 <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
                   <GameCard 
                     game={game} 
-                    isSelected={String(game.gamePk) === selectedGameId}
-                    onSelect={() => onGameSelect(String(game.gamePk))}
+                    isSelected={false}
                   />
                 </Grid>
               ))

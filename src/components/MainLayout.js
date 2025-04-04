@@ -43,6 +43,14 @@ const MainLayout = () => {
 
   // Handle game selection
   const handleGameSelect = (id) => {
+    // Find the game
+    const game = games.find(g => String(g.gamePk) === id);
+    
+    // Only allow selection of in-progress games
+    if (!game || game.status.abstractGameState !== 'Live') {
+      return;
+    }
+    
     if (selectedGameId === id) {
       // Deselect if already selected
       setSelectedGameId(null);
@@ -53,6 +61,18 @@ const MainLayout = () => {
       navigate(`/${id}`, { replace: true });
     }
   };
+  
+  // Check if selected game is still in progress
+  useEffect(() => {
+    if (selectedGameId && games.length > 0) {
+      const selectedGame = games.find(g => String(g.gamePk) === selectedGameId);
+      if (!selectedGame || selectedGame.status.abstractGameState !== 'Live') {
+        // Clear selection if game is no longer in progress
+        setSelectedGameId(null);
+        navigate('/', { replace: true });
+      }
+    }
+  }, [games, selectedGameId, navigate]);
 
   // Navigate to dashboard
   const goToDashboard = () => {

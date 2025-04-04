@@ -21,9 +21,9 @@ const cardStyles = {
     boxShadow: 'none',
     borderRadius: 0,
     textDecoration: 'none',
-    cursor: 'pointer',
   },
   live: {
+    cursor: 'pointer',
     transition: 'all 0.3s ease',
     '&:hover': {
       borderColor: 'white',
@@ -32,7 +32,6 @@ const cardStyles = {
   },
   static: {
     opacity: 0.7,
-    cursor: 'pointer',
   },
   selected: {
     filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.8)) !important',
@@ -315,7 +314,7 @@ const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
   // Render card
   return (
     <Card 
-      onClick={onSelect}
+      onClick={isInProgress ? onSelect : undefined}
       sx={finalStyles}
       className={isSelected ? 'selected-card' : isInProgress ? '' : 'static-card'}
     >
