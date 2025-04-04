@@ -6,6 +6,9 @@ import CssBaseline from '@mui/material/CssBaseline';
 // Import main layout component
 import MainLayout from './components/MainLayout';
 
+// Import audio provider
+import { AudioProvider } from './audio/contexts/AudioContext';
+
 // Create a theme instance
 const theme = createTheme({
   palette: {
@@ -150,12 +153,14 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <Routes>
-          <Route path="/:gameId?" element={<MainLayout />} />
-          <Route path="/games" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+      <AudioProvider>
+        <Router>
+          <Routes>
+            <Route path="/:gameId?" element={<MainLayout />} />
+            <Route path="/games" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </AudioProvider>
     </ThemeProvider>
   );
 }

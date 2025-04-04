@@ -4,6 +4,7 @@ import {
   Typography,
   Stack
 } from '@mui/material';
+import AudioControls from './AudioControls';
 
 /**
  * Header component that contains the app title
@@ -49,6 +50,7 @@ const Header = ({ onTitleClick }) => {
           ambient soundtracks for the national pastime
         </Typography>
       </Stack>
+      <AudioControls />
     </Box>
   );
 };
