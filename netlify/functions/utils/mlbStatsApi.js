@@ -8,15 +8,24 @@ const MLB_STATS_API_V1_1_BASE_URL = 'https://statsapi.mlb.com/api/v1.1';
  * Get today's MLB games
  * @param {Object} options Optional parameters
  * @param {string} options.date Optional date in YYYY-MM-DD format
- * @param {number} options.timezoneOffset Timezone offset in minutes
+ * @param {number} options.timezoneOffset Timezone offset in minutes (negative for timezones ahead of UTC)
  * @returns {Promise<Array>} List of games
  */
 const getTodaysGames = async (options = {}) => {
   try {
-    // Get current date adjusted for the provided timezone offset
+    // Get current date in UTC
     const now = new Date();
-    const adjustedDate = new Date(now.getTime() - (now.getTimezoneOffset() - (options.timezoneOffset || 0)) * 60000);
-    const formattedDate = adjustedDate.toISOString().split('T')[0];
+    
+    // If timezoneOffset is provided, adjust the date to the client's timezone
+    if (options.timezoneOffset !== undefined) {
+      // Convert the timezone offset to milliseconds and adjust the date
+      const offsetMs = options.timezoneOffset * 60 * 1000;
+      now.setTime(now.getTime() + offsetMs);
+    }
+    
+    const formattedDate = now.toISOString().split('T')[0];
+
+    console.log('Fetching games for date:', formattedDate, 'with timezone offset:', options.timezoneOffset);
 
     const response = await axios.get(`${MLB_STATS_API_BASE_URL}/schedule`, {
       params: {

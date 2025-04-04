@@ -16,8 +16,8 @@ const apiClient = axios.create({
  */
 export const getTodaysGames = async (date) => {
   try {
-    // Get client's timezone offset in minutes
-    const timezoneOffset = new Date().getTimezoneOffset();
+    // Get client's timezone offset in minutes (negative for timezones ahead of UTC)
+    const timezoneOffset = -new Date().getTimezoneOffset();
     const params = date ? { date, timezoneOffset } : { timezoneOffset };
     const response = await apiClient.get('/getGames', { params });
     return response.data.games;
