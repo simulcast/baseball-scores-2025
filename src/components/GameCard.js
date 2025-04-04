@@ -19,14 +19,13 @@ const commonCardStyles = {
   border: '6px solid white',
   boxShadow: 'none',
   borderRadius: 0,
+  textDecoration: 'none',
 };
 
 const liveCardStyles = {
   ...commonCardStyles,
-  transition: 'all 0.3s ease-in-out',
-  textDecoration: 'none',
+  transition: 'all 0.3s ease',
   '&:hover': {
-    transform: 'translateY(-4px)',
     borderColor: 'white',
   }
 };

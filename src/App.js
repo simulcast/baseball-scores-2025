@@ -79,14 +79,12 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          background: 'linear-gradient(145deg, rgba(45, 90, 39, 0.8), rgba(26, 47, 22, 0.8))',
+          background: 'linear-gradient(145deg, #2d5a27, #1d3a19)',
           filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.3))',
-          '&.MuiCard-root:not(.static-card)': {
-            transition: 'all 0.3s ease-in-out',
-            '&:hover': {
-              transform: 'translateY(-4px)',
-            }
-          }
+          transition: 'all 0.3s ease',
+          '&:not(.static-card):hover': {
+            filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.6))',
+          },
         },
       },
     },
