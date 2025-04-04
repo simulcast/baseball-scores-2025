@@ -32,12 +32,13 @@ exports.handler = async (event) => {
       };
     }
 
-    // Get date parameter if provided
+    // Get parameters
     const params = event.queryStringParameters || {};
     const date = params.date;
+    const timezoneOffset = params.timezoneOffset ? parseInt(params.timezoneOffset, 10) : 0;
 
-    // Fetch fresh data
-    const games = await getTodaysGames({ date });
+    // Fetch fresh data with timezone offset
+    const games = await getTodaysGames({ date, timezoneOffset });
 
     // Update cache
     gamesCache = {
