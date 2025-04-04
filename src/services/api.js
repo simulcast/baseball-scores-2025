@@ -129,10 +129,3 @@ export const detectGameStateChanges = (previousState, currentState) => {
 
   return { hasChanges, events };
 };
-
-// Export functions
-export {
-  getTodaysGames,
-  getGameState,
-  detectGameStateChanges
-};
