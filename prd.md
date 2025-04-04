@@ -1,6 +1,6 @@
-Product Requirements Document: MLB Musical Scoreboard
+Product Requirements Document: Baseball Scores
 Project Overview
-MLB Musical Scoreboard is a web application that transforms live baseball games into generative, ambient music. Each game generates a unique soundtrack based on its current state, with musical patterns changing in response to game events like strikes, balls, outs, and scoring plays.
+Baseball Scores is a web application that transforms live baseball games into generative, ambient music. Each game generates a unique soundtrack based on its current state, with musical patterns changing in response to game events like strikes, balls, outs, and scoring plays.
 The interface resembles a traditional baseball scoreboard, but the experience is enhanced through an algorithmically generated soundtrack that reflects the rhythm, tension, and flow of live games.
 Core Features
 
@@ -271,5 +271,5 @@ Keyboard navigation support
 
 
 Conclusion
-The MLB Musical Scoreboard creates a novel way to experience baseball games through generative music. By mapping game states to musical parameters, it creates an ambient soundtrack that evolves with the game, adding an emotional and artistic dimension to following baseball.
+The Baseball Scores creates a novel way to experience baseball games through generative music. By mapping game states to musical parameters, it creates an ambient soundtrack that evolves with the game, adding an emotional and artistic dimension to following baseball.
 This project combines real-time data, web audio technology, and baseball statistics to create an immersive, mobile-friendly experience that works both as a practical scoreboard and as an artistic interpretation of America's pastime.

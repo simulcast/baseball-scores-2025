@@ -1,6 +1,6 @@
 {
-    "short_name": "MLB Music",
-    "name": "MLB Musical Scoreboard",
+    "short_name": "Baseball Scores",
+    "name": "Baseball Scores",
     "icons": [
       {
         "src": "favicon.ico",
@@ -21,5 +21,5 @@
     "start_url": ".",
     "display": "standalone",
     "theme_color": "#000000",
-    "background_color": "#121212"
+    "background_color": "#ffffff"
   }
