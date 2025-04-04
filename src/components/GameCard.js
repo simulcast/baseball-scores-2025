@@ -1,14 +1,13 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { 
   Card, 
   CardContent, 
   Typography, 
   Box, 
   Grid, 
-  Chip
+  Chip,
+  Divider
 } from '@mui/material';
-import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
 import { format } from 'date-fns';
 
 // Card style constants
@@ -22,16 +21,21 @@ const cardStyles = {
     boxShadow: 'none',
     borderRadius: 0,
     textDecoration: 'none',
+    cursor: 'pointer',
   },
   live: {
     transition: 'all 0.3s ease',
     '&:hover': {
       borderColor: 'white',
+      filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.45))',
     }
   },
   static: {
     opacity: 0.7,
-    cursor: 'default',
+    cursor: 'pointer',
+  },
+  selected: {
+    filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.8)) !important',
   }
 };
 
@@ -85,14 +89,136 @@ const TeamRow = ({ teamName, score, isInProgress }) => (
   </>
 );
 
+// Count indicator subcomponent
+const CountIndicator = ({ count, total, label }) => (
+  <Box sx={{ 
+    display: 'flex', 
+    flexDirection: 'column', 
+    alignItems: 'center', 
+    mx: 1,
+    height: '45px', // Fixed height to match the BaseballDiamond
+    justifyContent: 'flex-start'
+  }}>
+    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+      {label}
+    </Typography>
+    <Box sx={{ 
+      display: 'flex', 
+      gap: '2px', 
+      mt: 0.5,
+      alignItems: 'center',
+      height: '32px' // Match the diamond height
+    }}>
+      {[...Array(total)].map((_, index) => (
+        <Box
+          key={index}
+          sx={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: index < count ? '#fff' : 'rgba(255,255,255,0.3)',
+          }}
+        />
+      ))}
+    </Box>
+  </Box>
+);
+
+// Baseball diamond with runners
+const BaseballDiamond = ({ runners = [] }) => {
+  // Runners array should be [first, second, third]
+  const firstBase = runners[0] || false;
+  const secondBase = runners[1] || false;
+  const thirdBase = runners[2] || false;
+
+  return (
+    <Box 
+      sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        mx: 1,
+        height: '45px', // Fixed height to match CountIndicator
+        justifyContent: 'flex-start'
+      }}
+    >
+      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+        RUNNERS ON
+      </Typography>
+      <Box 
+        sx={{ 
+          position: 'relative',
+          width: '32px',
+          height: '32px',
+          transform: 'rotate(-45deg)',
+          mt: 0.5,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
+      >
+        {/* Third Base (Top Left) */}
+        <Box 
+          sx={{ 
+            position: 'absolute',
+            top: '4px',
+            left: '4px',
+            width: '10px',
+            height: '10px',
+            backgroundColor: thirdBase ? '#fff' : 'rgba(255,255,255,0.3)',
+          }}
+        />
+        
+        {/* Second Base (Top Right) */}
+        <Box 
+          sx={{ 
+            position: 'absolute',
+            top: '4px',
+            right: '4px',
+            width: '10px',
+            height: '10px',
+            backgroundColor: secondBase ? '#fff' : 'rgba(255,255,255,0.3)',
+          }}
+        />
+        
+        {/* First Base (Bottom Right) */}
+        <Box 
+          sx={{ 
+            position: 'absolute',
+            bottom: '4px',
+            right: '4px',
+            width: '10px',
+            height: '10px',
+            backgroundColor: firstBase ? '#fff' : 'rgba(255,255,255,0.3)',
+          }}
+        />
+        
+        {/* Home Plate (Bottom Left - always empty) */}
+        <Box 
+          sx={{ 
+            position: 'absolute',
+            bottom: '4px',
+            left: '4px',
+            width: '10px',
+            height: '10px',
+            backgroundColor: 'transparent',
+          }}
+        />
+      </Box>
+    </Box>
+  );
+};
+
 /**
  * Game card component for the dashboard
  * 
  * @param {Object} props Component props
  * @param {Object} props.game Game data
+ * @param {boolean} props.isSelected Whether this game is currently selected
+ * @param {Function} props.onSelect Callback for when the game is clicked
  * @returns {JSX.Element} Game card component
  */
-const GameCard = ({ game }) => {
+const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
   // Extract game data
   const {
     gamePk, 
@@ -117,6 +243,18 @@ const GameCard = ({ game }) => {
   // Get score for teams
   const awayScore = teams.away.score !== undefined ? teams.away.score : 0;
   const homeScore = teams.home.score !== undefined ? teams.home.score : 0;
+
+  // Get count data if available
+  const balls = linescore?.balls || 0;
+  const strikes = linescore?.strikes || 0;
+  const outs = linescore?.outs || 0;
+  
+  // Get runners on base
+  const runnersOnBase = [
+    linescore?.offense?.first?.id !== undefined,
+    linescore?.offense?.second?.id !== undefined,
+    linescore?.offense?.third?.id !== undefined
+  ];
 
   // Card content
   const cardContent = (
@@ -145,26 +283,41 @@ const GameCard = ({ game }) => {
           isInProgress={isInProgress}
         />
       </Grid>
+
+      {/* Count indicators and diamond (only for in-progress games) */}
+      {isInProgress && (
+        <>
+          <Divider sx={{ my: 1.5, borderColor: 'rgba(255,255,255,0.2)' }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+            <BaseballDiamond runners={runnersOnBase} />
+            <CountIndicator count={balls} total={4} label="BALLS" />
+            <CountIndicator count={strikes} total={3} label="STRIKES" />
+            <CountIndicator count={outs} total={3} label="OUTS" />
+          </Box>
+        </>
+      )}
     </CardContent>
   );
 
   // Compute final card styles
-  const liveCardStyles = { ...cardStyles.common, ...cardStyles.live };
-  const staticCardStyles = { ...cardStyles.common, ...cardStyles.static };
+  let finalStyles = { ...cardStyles.common };
+  
+  if (isInProgress) {
+    finalStyles = { ...finalStyles, ...cardStyles.live };
+  } else {
+    finalStyles = { ...finalStyles, ...cardStyles.static };
+  }
+  
+  if (isSelected) {
+    finalStyles = { ...finalStyles, ...cardStyles.selected };
+  }
 
-  // Render card with or without link based on game status
-  return isInProgress ? (
+  // Render card
+  return (
     <Card 
-      component={Link}
-      to={`/${gamePk}`}
-      sx={liveCardStyles}
-    >
-      {cardContent}
-    </Card>
-  ) : (
-    <Card 
-      className="static-card"
-      sx={staticCardStyles}
+      onClick={onSelect}
+      sx={finalStyles}
+      className={isSelected ? 'selected-card' : isInProgress ? '' : 'static-card'}
     >
       {cardContent}
     </Card>

@@ -3,7 +3,9 @@ import {
   Grid, 
   Box, 
   CircularProgress,
-  Alert
+  Alert,
+  Snackbar,
+  Button
 } from '@mui/material';
 
 // Import components
@@ -12,7 +14,15 @@ import GameCard from '../components/GameCard';
 /**
  * GameList component that shows all games
  */
-const GameList = ({ games, gamesLoading, gamesError }) => {
+const GameList = ({ 
+  games, 
+  gamesLoading, 
+  gamesError, 
+  selectedGameId, 
+  onGameSelect,
+  gameEvents = [],
+  acknowledgeEvent = () => {}
+}) => {
   return (
     <>
       {/* Loading state */}
@@ -38,7 +48,11 @@ const GameList = ({ games, gamesLoading, gamesError }) => {
               .filter(game => game.status.abstractGameState === 'Live')
               .map(game => (
                 <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
-                  <GameCard game={game} />
+                  <GameCard 
+                    game={game} 
+                    isSelected={String(game.gamePk) === selectedGameId}
+                    onSelect={() => onGameSelect(String(game.gamePk))}
+                  />
                 </Grid>
               ))
             }
@@ -58,7 +72,11 @@ const GameList = ({ games, gamesLoading, gamesError }) => {
               .filter(game => game.status.abstractGameState === 'Final')
               .map(game => (
                 <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
-                  <GameCard game={game} />
+                  <GameCard 
+                    game={game} 
+                    isSelected={String(game.gamePk) === selectedGameId}
+                    onSelect={() => onGameSelect(String(game.gamePk))}
+                  />
                 </Grid>
               ))
             }
@@ -77,7 +95,11 @@ const GameList = ({ games, gamesLoading, gamesError }) => {
               .filter(game => game.status.abstractGameState === 'Preview')
               .map(game => (
                 <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
-                  <GameCard game={game} />
+                  <GameCard 
+                    game={game} 
+                    isSelected={String(game.gamePk) === selectedGameId}
+                    onSelect={() => onGameSelect(String(game.gamePk))}
+                  />
                 </Grid>
               ))
             }
@@ -93,6 +115,23 @@ const GameList = ({ games, gamesLoading, gamesError }) => {
           </Grid>
         )}
       </Grid>
+
+      {/* Game event notification */}
+      <Snackbar
+        open={gameEvents.length > 0}
+        autoHideDuration={5000}
+        onClose={() => acknowledgeEvent(0)}
+        message={gameEvents[0]?.details || ''}
+        action={
+          <Button 
+            color="secondary" 
+            size="small" 
+            onClick={() => acknowledgeEvent(0)}
+          >
+            OK
+          </Button>
+        }
+      />
     </>
   );
 };

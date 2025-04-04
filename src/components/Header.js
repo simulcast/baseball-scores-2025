@@ -4,6 +4,7 @@ import {
   Typography, 
   IconButton
 } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 
@@ -14,7 +15,8 @@ const Header = ({
   hasLiveGames, 
   audioMuted, 
   onTitleClick, 
-  onAudioToggle 
+  onAudioToggle, 
+  onRefresh 
 }) => {
   return (
     <Box sx={{ 
@@ -44,18 +46,32 @@ const Header = ({
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         {hasLiveGames && (
-          <IconButton 
-            onClick={onAudioToggle} 
-            color="inherit"
-            sx={{ 
-              border: '2px solid white',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              }
-            }}
-          >
-            {!audioMuted ? <VolumeUpIcon /> : <VolumeOffIcon />}
-          </IconButton>
+          <>
+            <IconButton 
+              onClick={onAudioToggle} 
+              color="inherit"
+              sx={{ 
+                border: '2px solid white',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+            >
+              {audioMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+            </IconButton>
+            <IconButton 
+              onClick={onRefresh} 
+              color="inherit"
+              sx={{ 
+                border: '2px solid white',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </>
         )}
       </Box>
     </Box>

@@ -1,25 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container } from '@mui/material';
 
 // Import components
 import Header from './Header';
 import GameList from '../pages/GameList';
-import GameDetail from '../pages/GameDetail';
 
 // Import hooks
 import useGameData from '../hooks/useGameData';
 
 /**
- * MainLayout component that handles conditional rendering based on URL params
+ * MainLayout component that handles game selection and data loading
  */
 const MainLayout = () => {
   const { gameId } = useParams();
   const navigate = useNavigate();
   
+  // State for selected game
+  const [selectedGameId, setSelectedGameId] = useState(null);
+  
   // State for audio
-  const [audioMuted, setAudioMuted] = useState(true);
+  const [audioMuted, setAudioMuted] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  
+  // Set selected game from URL parameter
+  useEffect(() => {
+    if (gameId) {
+      setSelectedGameId(gameId);
+    } else {
+      setSelectedGameId(null);
+    }
+  }, [gameId]);
   
   // Get game data using our custom hook
   const { 
@@ -34,7 +45,7 @@ const MainLayout = () => {
     acknowledgeEvent,
     refreshGameState
   } = useGameData({
-    gamePk: gameId,
+    gamePk: selectedGameId,
     refreshInterval: 10000
   });
 
@@ -51,9 +62,32 @@ const MainLayout = () => {
     setAudioMuted(!audioMuted);
   };
 
+  // Handle game selection
+  const handleGameSelect = (id) => {
+    if (selectedGameId === id) {
+      // Deselect if already selected
+      setSelectedGameId(null);
+      navigate('/', { replace: true });
+    } else {
+      // Select new game
+      setSelectedGameId(id);
+      navigate(`/${id}`, { replace: true });
+    }
+  };
+
   // Navigate to dashboard
   const goToDashboard = () => {
+    setSelectedGameId(null);
     navigate('/');
+  };
+
+  // Handle refresh action based on context
+  const handleRefresh = () => {
+    if (selectedGameId) {
+      refreshGameState();
+    } else {
+      refreshGames();
+    }
   };
 
   return (
@@ -74,32 +108,20 @@ const MainLayout = () => {
         audioMuted={audioMuted}
         onTitleClick={goToDashboard}
         onAudioToggle={toggleAudioMute}
+        onRefresh={handleRefresh}
       />
 
-      {/* Conditional Content */}
-      {gameId ? (
-        <GameDetail 
-          gameId={gameId}
-          games={games}
-          gamesLoading={gamesLoading}
-          gameState={gameState}
-          gameLoading={gameLoading}
-          gameError={gameError}
-          gameEvents={gameEvents}
-          audioEnabled={audioEnabled}
-          audioMuted={audioMuted}
-          acknowledgeEvent={acknowledgeEvent}
-          toggleAudio={toggleAudioMute}
-          refreshGameState={refreshGameState}
-        />
-      ) : (
-        <GameList 
-          games={games}
-          gamesLoading={gamesLoading}
-          gamesError={gamesError}
-          audioMuted={audioMuted}
-        />
-      )}
+      {/* Games List */}
+      <GameList 
+        games={games}
+        gamesLoading={gamesLoading}
+        gamesError={gamesError}
+        selectedGameId={selectedGameId}
+        onGameSelect={handleGameSelect}
+        audioMuted={audioMuted}
+        gameEvents={gameEvents}
+        acknowledgeEvent={acknowledgeEvent}
+      />
     </Container>
   );
 };

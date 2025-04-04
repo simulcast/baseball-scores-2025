@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -146,18 +146,6 @@ const theme = createTheme({
   },
 });
 
-// Custom redirect component for games/:gameId to /:gameId
-const GameRedirect = () => {
-  const { gameId } = useParams();
-  const navigate = useNavigate();
-  
-  React.useEffect(() => {
-    navigate(`/${gameId}`, { replace: true });
-  }, [gameId, navigate]);
-  
-  return null;
-};
-
 function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -165,7 +153,6 @@ function App() {
       <Router>
         <Routes>
           <Route path="/:gameId?" element={<MainLayout />} />
-          <Route path="/games/:gameId" element={<GameRedirect />} />
           <Route path="/games" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
