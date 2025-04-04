@@ -3,9 +3,7 @@ import {
   Grid, 
   Box, 
   CircularProgress,
-  Alert,
-  Snackbar,
-  Button
+  Alert
 } from '@mui/material';
 
 // Import components
@@ -19,9 +17,7 @@ const GameList = ({
   gamesLoading, 
   gamesError, 
   selectedGameId, 
-  onGameSelect,
-  gameEvents = [],
-  acknowledgeEvent = () => {}
+  onGameSelect
 }) => {
   return (
     <>
@@ -115,23 +111,6 @@ const GameList = ({
           </Grid>
         )}
       </Grid>
-
-      {/* Game event notification */}
-      <Snackbar
-        open={gameEvents.length > 0}
-        autoHideDuration={5000}
-        onClose={() => acknowledgeEvent(0)}
-        message={gameEvents[0]?.details || ''}
-        action={
-          <Button 
-            color="secondary" 
-            size="small" 
-            onClick={() => acknowledgeEvent(0)}
-          >
-            OK
-          </Button>
-        }
-      />
     </>
   );
 };

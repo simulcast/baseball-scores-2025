@@ -1,23 +1,13 @@
 import React from 'react';
 import { 
   Box, 
-  Typography, 
-  IconButton
+  Typography
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import VolumeOffIcon from '@mui/icons-material/VolumeOff';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 
 /**
- * Header component that contains the app title and control buttons
+ * Header component that contains the app title
  */
-const Header = ({ 
-  hasLiveGames, 
-  audioMuted, 
-  onTitleClick, 
-  onAudioToggle, 
-  onRefresh 
-}) => {
+const Header = ({ onTitleClick }) => {
   return (
     <Box sx={{ 
       display: 'flex', 
@@ -44,36 +34,6 @@ const Header = ({
       >
         Baseball Scores
       </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        {hasLiveGames && (
-          <>
-            <IconButton 
-              onClick={onAudioToggle} 
-              color="inherit"
-              sx={{ 
-                border: '2px solid white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                }
-              }}
-            >
-              {audioMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
-            </IconButton>
-            <IconButton 
-              onClick={onRefresh} 
-              color="inherit"
-              sx={{ 
-                border: '2px solid white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                }
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </>
-        )}
-      </Box>
     </Box>
   );
 };

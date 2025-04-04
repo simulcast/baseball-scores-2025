@@ -19,10 +19,6 @@ const MainLayout = () => {
   // State for selected game
   const [selectedGameId, setSelectedGameId] = useState(null);
   
-  // State for audio
-  const [audioMuted, setAudioMuted] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(false);
-  
   // Set selected game from URL parameter
   useEffect(() => {
     if (gameId) {
@@ -37,30 +33,13 @@ const MainLayout = () => {
     games, 
     gamesLoading, 
     gamesError, 
-    refreshGames,
     gameState,
     gameLoading,
-    gameError,
-    gameEvents,
-    acknowledgeEvent,
-    refreshGameState
+    gameError
   } = useGameData({
     gamePk: selectedGameId,
     refreshInterval: 10000
   });
-
-  // Check if there are live games
-  const hasLiveGames = games.some(game => game.status.abstractGameState === 'Live');
-
-  // Toggle audio mute
-  const toggleAudioMute = () => {
-    if (!audioEnabled) {
-      setAudioEnabled(true);
-      setAudioMuted(false);
-      return;
-    }
-    setAudioMuted(!audioMuted);
-  };
 
   // Handle game selection
   const handleGameSelect = (id) => {
@@ -81,15 +60,6 @@ const MainLayout = () => {
     navigate('/');
   };
 
-  // Handle refresh action based on context
-  const handleRefresh = () => {
-    if (selectedGameId) {
-      refreshGameState();
-    } else {
-      refreshGames();
-    }
-  };
-
   return (
     <Container 
       maxWidth="xl" 
@@ -104,11 +74,7 @@ const MainLayout = () => {
     >
       {/* Header */}
       <Header 
-        hasLiveGames={hasLiveGames}
-        audioMuted={audioMuted}
         onTitleClick={goToDashboard}
-        onAudioToggle={toggleAudioMute}
-        onRefresh={handleRefresh}
       />
 
       {/* Games List */}
@@ -118,9 +84,6 @@ const MainLayout = () => {
         gamesError={gamesError}
         selectedGameId={selectedGameId}
         onGameSelect={handleGameSelect}
-        audioMuted={audioMuted}
-        gameEvents={gameEvents}
-        acknowledgeEvent={acknowledgeEvent}
       />
     </Container>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getTodaysGames, getGameState, detectGameStateChanges } from '../services/api';
+import { getTodaysGames, getGameState } from '../services/api';
 
 /**
  * Custom hook for fetching and managing game data
@@ -19,12 +19,6 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
   const [gameState, setGameState] = useState(null);
   const [gameLoading, setGameLoading] = useState(false);
   const [gameError, setGameError] = useState(null);
-  
-  // State for detected events
-  const [gameEvents, setGameEvents] = useState([]);
-  
-  // Ref to store previous game state for change detection
-  const previousGameStateRef = useRef(null);
   
   // Interval IDs for cleanup
   const gamesIntervalRef = useRef(null);
@@ -57,41 +51,14 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
       setGameLoading(true);
       
       const data = await getGameState(gamePk);
-      
-      // Store the previous state for change detection
-      previousGameStateRef.current = gameState;
-      
-      // Update the game state
       setGameState(data);
-      
-      // Detect changes if we have a previous state
-      if (previousGameStateRef.current) {
-        const { hasChanges, events } = detectGameStateChanges(
-          previousGameStateRef.current,
-          data
-        );
-        
-        if (hasChanges && events.length > 0) {
-          // Add new events to the queue
-          setGameEvents(prevEvents => [...prevEvents, ...events]);
-        }
-      }
     } catch (error) {
       setGameError('Failed to fetch game details');
       console.error('Error fetching game details:', error);
     } finally {
       setGameLoading(false);
     }
-  }, [gamePk, gameState]);
-
-  /**
-   * Acknowledge and remove an event from the queue
-   */
-  const acknowledgeEvent = useCallback((eventIndex) => {
-    setGameEvents(prevEvents => 
-      prevEvents.filter((_, index) => index !== eventIndex)
-    );
-  }, []);
+  }, [gamePk]);
 
   // Initial fetch and set up refresh interval for games
   useEffect(() => {
@@ -132,8 +99,6 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
     gameState,
     gameLoading,
     gameError,
-    gameEvents,
-    acknowledgeEvent,
     refreshGames: fetchGames,
     refreshGameState: fetchGameState
   };
