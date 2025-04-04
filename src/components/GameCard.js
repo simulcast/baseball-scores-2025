@@ -130,6 +130,15 @@ const BaseballDiamond = ({ runners = [] }) => {
   const secondBase = runners[1] || false;
   const thirdBase = runners[2] || false;
 
+  // Base size and spacing constants for consistent positioning
+  const baseSize = 10; // Width and height of each base in pixels
+  const baseOffset = 4; // Standard offset from edges in pixels
+  const baseStyles = {
+    width: `${baseSize}px`,
+    height: `${baseSize}px`,
+    position: 'absolute',
+  };
+
   return (
     <Box 
       sx={{ 
@@ -159,11 +168,9 @@ const BaseballDiamond = ({ runners = [] }) => {
         {/* Third Base (Top Left) */}
         <Box 
           sx={{ 
-            position: 'absolute',
-            top: '4px',
-            left: '4px',
-            width: '10px',
-            height: '10px',
+            ...baseStyles,
+            top: `${baseOffset}px`,
+            left: `${baseOffset}px`,
             backgroundColor: thirdBase ? '#fff' : 'rgba(255,255,255,0.3)',
           }}
         />
@@ -171,11 +178,9 @@ const BaseballDiamond = ({ runners = [] }) => {
         {/* Second Base (Top Right) */}
         <Box 
           sx={{ 
-            position: 'absolute',
-            top: '4px',
-            right: '4px',
-            width: '10px',
-            height: '10px',
+            ...baseStyles,
+            top: `${baseOffset}px`,
+            right: `${baseOffset}px`,
             backgroundColor: secondBase ? '#fff' : 'rgba(255,255,255,0.3)',
           }}
         />
@@ -183,11 +188,9 @@ const BaseballDiamond = ({ runners = [] }) => {
         {/* First Base (Bottom Right) */}
         <Box 
           sx={{ 
-            position: 'absolute',
-            bottom: '4px',
-            right: '4px',
-            width: '10px',
-            height: '10px',
+            ...baseStyles,
+            bottom: '-2.5px',
+            right: `${baseOffset}px`,
             backgroundColor: firstBase ? '#fff' : 'rgba(255,255,255,0.3)',
           }}
         />
@@ -195,11 +198,9 @@ const BaseballDiamond = ({ runners = [] }) => {
         {/* Home Plate (Bottom Left - always empty) */}
         <Box 
           sx={{ 
-            position: 'absolute',
-            bottom: '4px',
-            left: '4px',
-            width: '10px',
-            height: '10px',
+            ...baseStyles,
+            bottom: `${baseOffset}px`,
+            left: `${baseOffset}px`,
             backgroundColor: 'transparent',
           }}
         />
