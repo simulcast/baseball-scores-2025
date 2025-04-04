@@ -60,7 +60,7 @@ const Scoreboard = ({ gameState }) => {
   } = gameState;
 
   return (
-    <Card className="scoreboard" sx={{ mb: 3 }}>
+    <Card className="scoreboard" sx={{ mb: 3, width: '100%', boxSizing: 'border-box' }}>
       {/* Team scores */}
       <Grid container>
         <Grid item xs={12} sm={6}>
