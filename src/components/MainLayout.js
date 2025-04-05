@@ -35,7 +35,11 @@ const MainLayout = () => {
     gamesError, 
     gameState,
     gameLoading,
-    gameError
+    gameError,
+    gameEvents,
+    acknowledgeEvent,
+    refreshGames,
+    refreshGameState
   } = useGameData({
     gamePk: selectedGameId,
     refreshInterval: 1000
@@ -125,6 +129,8 @@ const MainLayout = () => {
         gamesError={gamesError}
         selectedGameId={selectedGameId}
         onGameSelect={handleGameSelect}
+        gameEvents={gameEvents}
+        acknowledgeEvent={acknowledgeEvent}
       />
     </Container>
   );
