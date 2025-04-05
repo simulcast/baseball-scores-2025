@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { 
   Grid, 
   Box, 
@@ -17,31 +17,8 @@ const GameList = ({
   gamesLoading, 
   gamesError, 
   selectedGameId, 
-  onGameSelect,
-  gameEvents = [],
-  acknowledgeEvent = () => {}
+  onGameSelect
 }) => {
-  // Process game events for sound triggers
-  useEffect(() => {
-    if (gameEvents.length > 0) {
-      const currentEvent = gameEvents[0];
-      console.log('Processing game event for sound:', currentEvent);
-      
-      // Here you would trigger your sound based on the event type
-      // For example:
-      // if (currentEvent.type === 'RUN_SCORED') {
-      //   playSoundEffect('run');
-      // } else if (currentEvent.type === 'OUT_RECORDED') {
-      //   playSoundEffect('out');
-      // }
-      
-      // Acknowledge the event after processing
-      setTimeout(() => {
-        acknowledgeEvent(0);
-      }, 500);
-    }
-  }, [gameEvents, acknowledgeEvent]);
-
   return (
     <>
       {/* Loading state */}
