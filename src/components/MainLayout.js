@@ -44,7 +44,8 @@ const MainLayout = () => {
     refreshGameState
   } = useGameData({
     gamePk: selectedGameId,
-    refreshInterval: 200 // Fast refresh for all components
+    refreshInterval: 200, // Fast refresh for all components
+    refreshAllGames: true // Ensure all games update at the same frequency
   });
 
   // Initialize the baseball audio system

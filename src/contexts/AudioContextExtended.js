@@ -162,8 +162,25 @@ export const AudioProvider = ({ children }) => {
   const updateGameState = useCallback((gameState) => {
     if (!baseballAudioInitialized || !gameState || !activeGameId) return;
     
+    // Store previous state to help with tracking runner data
+    const previousState = baseballAudioEngineRef.current?.currentGameState;
+    
+    // Ensure we don't lose critical data between API calls (like runners on base)
+    if (previousState && gameState) {
+      // If new data has no runners but previous had runners, preserve them
+      if (Array.isArray(gameState.runners) && 
+          !gameState.runners.some(Boolean) && 
+          Array.isArray(previousState.runners) && 
+          previousState.runners.some(Boolean)) {
+        
+        console.log('[AudioContext] Preserving runner data from previous state');
+        gameState.runners = [...previousState.runners];
+      }
+    }
+    
     // Update the baseball audio engine with the new game state
     if (baseballAudioEngineRef.current) {
+      console.log('[AudioContext] Updating audio engine with gameState, runners:', gameState.runners);
       baseballAudioEngineRef.current.updateGameState(gameState);
     }
   }, [activeGameId, baseballAudioInitialized]);

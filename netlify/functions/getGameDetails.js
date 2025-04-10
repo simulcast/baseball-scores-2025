@@ -3,8 +3,8 @@ const { getGameDetails, transformGameState } = require('./utils/mlbStatsApi');
 // Cache to store game details with expiration
 const gameDetailsCache = new Map();
 
-// Cache expiration time in milliseconds (15 seconds for live game data)
-const CACHE_EXPIRATION = 15 * 1000;
+// Cache expiration time in milliseconds (reduced for faster updates)
+const CACHE_EXPIRATION = 5 * 1000;
 
 exports.handler = async (event) => {
   try {
@@ -31,7 +31,7 @@ exports.handler = async (event) => {
         statusCode: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=15'
+          'Cache-Control': 'public, max-age=5'
         },
         body: JSON.stringify({
           gameState: cachedData.data,
@@ -62,7 +62,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=15'
+        'Cache-Control': 'public, max-age=5'
       },
       body: JSON.stringify({
         gameState,

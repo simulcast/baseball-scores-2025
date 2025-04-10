@@ -218,6 +218,7 @@ const BaseballDiamond = ({ runners = [] }) => {
  * @param {Function} props.onSelect Callback for when the game is clicked
  * @param {Array} props.events Game-specific events
  * @param {Function} props.onAcknowledgeEvent Callback to acknowledge events
+ * @param {Object} props.detailedGameState Optional detailed game state for more accurate data
  * @returns {JSX.Element} Game card component
  */
 const GameCard = ({ 
@@ -225,7 +226,8 @@ const GameCard = ({
   isSelected = false, 
   onSelect = () => {},
   events = [],
-  onAcknowledgeEvent = () => {}
+  onAcknowledgeEvent = () => {},
+  detailedGameState = null
 }) => {
   // Extract game data
   const {
@@ -252,17 +254,38 @@ const GameCard = ({
   const awayScore = teams.away.score !== undefined ? teams.away.score : 0;
   const homeScore = teams.home.score !== undefined ? teams.home.score : 0;
 
-  // Get count data if available
-  const balls = linescore?.balls || 0;
-  const strikes = linescore?.strikes || 0;
-  const outs = linescore?.outs || 0;
+  // Use detailed game state if available (for the selected game)
+  const balls = detailedGameState ? detailedGameState.balls : (linescore?.balls || 0);
+  const strikes = detailedGameState ? detailedGameState.strikes : (linescore?.strikes || 0);
+  const outs = detailedGameState ? detailedGameState.outs : (linescore?.outs || 0);
   
   // Get runners on base
-  const runnersOnBase = [
+  // Determine best source - prefer any source that has runners
+  const gameCardRunners = [
     linescore?.offense?.first?.id !== undefined,
     linescore?.offense?.second?.id !== undefined,
     linescore?.offense?.third?.id !== undefined
   ];
+  
+  const detailedRunners = detailedGameState?.runners || [false, false, false];
+  
+  // Choose data source that actually has runners (if any)
+  const gameCardHasRunners = gameCardRunners.some(Boolean);
+  const detailedHasRunners = Array.isArray(detailedRunners) && detailedRunners.some(Boolean);
+  
+  // For debugging
+  if (isSelected) {
+    console.log('GameCard runners:', gameCardRunners);
+    console.log('Detailed runners:', detailedRunners);
+    console.log('Using runners from: ' + (gameCardHasRunners ? 'game card' : 
+                                         detailedHasRunners ? 'detailed state' : 'no runners'));
+  }
+  
+  // CRITICAL FIX: Prefer the source that actually has runners
+  // If both have runners or neither have runners, use gameCard data
+  const runnersOnBase = gameCardHasRunners ? gameCardRunners : 
+                        detailedHasRunners ? detailedRunners : 
+                        [false, false, false];
 
   // Handle event acknowledgment
   React.useEffect(() => {

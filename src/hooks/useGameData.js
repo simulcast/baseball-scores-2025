@@ -7,9 +7,10 @@ import { getTodaysGames, getGameState } from '../services/api';
  * @param {string} options.date Optional date in YYYY-MM-DD format
  * @param {number} options.gamePk Optional game ID to fetch details for
  * @param {number} options.refreshInterval Interval in ms to refresh data
+ * @param {boolean} options.refreshAllGames If true, all games will refresh at the same rate as the selected game
  * @returns {Object} Game data and loading state
  */
-const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
+const useGameData = ({ date, gamePk, refreshInterval = 5000, refreshAllGames = false }) => {
   // State for all games
   const [games, setGames] = useState([]);
   const [gamesLoading, setGamesLoading] = useState(true);
@@ -40,22 +41,36 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
       if (gamePk && gameState) {
         const updatedGames = data.map(game => {
           if (String(game.gamePk) === String(gamePk) && game.status.abstractGameState === 'Live') {
+            // Check if it's between innings (End or Middle inning state)
+            const inningState = game.linescore?.inningState || '';
+            const isBetweenInnings = inningState.startsWith('End') || inningState.startsWith('Middle');
+            
+            // Override count data if between innings
+            const balls = isBetweenInnings ? 0 : gameState.balls;
+            const strikes = isBetweenInnings ? 0 : gameState.strikes;
+            const outs = isBetweenInnings ? 0 : gameState.outs;
+            
+            // Clear runners if between innings
+            const runnersOnBase = isBetweenInnings 
+              ? [false, false, false] 
+              : gameState.runners;
+            
             // Create a consistent game object that combines API data with our processed gameState
             return {
               ...game,
               // Add or update linescore properties with more accurate data from gameState
               linescore: {
                 ...game.linescore,
-                balls: gameState.balls,
-                strikes: gameState.strikes,
-                outs: gameState.outs,
+                balls,
+                strikes,
+                outs,
                 currentInning: gameState.inning,
                 isTopInning: gameState.isTopInning,
                 // Update runners on base
                 offense: {
-                  first: gameState.runners[0] ? { id: 1 } : undefined,
-                  second: gameState.runners[1] ? { id: 1 } : undefined,
-                  third: gameState.runners[2] ? { id: 1 } : undefined
+                  first: runnersOnBase[0] ? { id: 1 } : undefined,
+                  second: runnersOnBase[1] ? { id: 1 } : undefined,
+                  third: runnersOnBase[2] ? { id: 1 } : undefined
                 }
               },
               // Update teams scores
@@ -97,15 +112,38 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
       setGameLoading(true);
       
       const data = await getGameState(gamePk);
-      setGameState(data);
       
-      // Check for events by comparing with previous state
-      if (previousGameStateRef.current) {
-        detectGameEvents(previousGameStateRef.current, data);
+      // Ensure the data is valid before setting
+      if (data) {
+        // Log the runners data for debugging
+        console.log('Received game state with runners:', data.runners);
+        
+        // IMPORTANT: Make sure we don't lose runner data between API calls
+        // If data comes back with empty runners but we had runners before, preserve them
+        if (previousGameStateRef.current && 
+            Array.isArray(data.runners) && 
+            !data.runners.some(Boolean) && 
+            Array.isArray(previousGameStateRef.current.runners) && 
+            previousGameStateRef.current.runners.some(Boolean)) {
+          
+          console.log('WARNING: New data has empty runners but previous had runners. Preserving previous runner data.');
+          data.runners = [...previousGameStateRef.current.runners];
+        }
+        
+        // Store the original data
+        setGameState(data);
+        
+        // Check for events by comparing with previous state
+        if (previousGameStateRef.current) {
+          detectGameEvents(previousGameStateRef.current, data);
+        }
+        
+        // Update reference for next comparison
+        previousGameStateRef.current = data;
+        
+        // Trigger a refresh of games to update the cards with the new data
+        fetchGames();
       }
-      
-      // Update reference for next comparison
-      previousGameStateRef.current = data;
       
     } catch (error) {
       setGameError('Failed to fetch game details');
@@ -113,7 +151,7 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
     } finally {
       setGameLoading(false);
     }
-  }, [gamePk]);
+  }, [gamePk, fetchGames]);
 
   /**
    * Detect game events by comparing previous and current state
@@ -169,7 +207,11 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
     fetchGames();
     
     // Set up refresh interval
-    gamesIntervalRef.current = setInterval(fetchGames, refreshInterval);
+    // If refreshAllGames is true, use the same fast interval as the game details
+    const interval = refreshAllGames ? Math.min(refreshInterval, 200) : refreshInterval;
+    
+    console.log(`Setting up games refresh interval: ${interval}ms (refreshAllGames=${refreshAllGames})`);
+    gamesIntervalRef.current = setInterval(fetchGames, interval);
     
     // Clean up interval on unmount
     return () => {
@@ -177,7 +219,7 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
         clearInterval(gamesIntervalRef.current);
       }
     };
-  }, [fetchGames, refreshInterval]);
+  }, [fetchGames, refreshInterval, refreshAllGames]);
 
   // Fetch specific game data if gamePk is provided
   useEffect(() => {

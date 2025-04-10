@@ -9,6 +9,9 @@ const apiClient = axios.create({
   }
 });
 
+// Store a reference to the active games to allow for fast updates
+let activeGames = [];
+
 /**
  * Get today's games
  * @param {string} date Optional date in YYYY-MM-DD format
@@ -20,7 +23,16 @@ export const getTodaysGames = async (date) => {
     const timezoneOffset = -new Date().getTimezoneOffset();
     const params = date ? { date, timezoneOffset } : { timezoneOffset };
     const response = await apiClient.get('/getGames', { params });
-    return response.data.games;
+    
+    // Update the active games list for tracking
+    const games = response.data.games || [];
+    
+    // Track which games are live for potential batch updates
+    activeGames = games
+      .filter(game => game.status.abstractGameState === 'Live')
+      .map(game => game.gamePk);
+    
+    return games;
   } catch (error) {
     console.error('Error fetching today\'s games:', error);
     throw error;
@@ -30,6 +42,7 @@ export const getTodaysGames = async (date) => {
 /**
  * Get detailed game state
  * @param {number} gamePk Game ID
+ * @param {boolean} includeActiveGames If true, returns basic state for all active games
  * @returns {Promise<Object>} Game state
  */
 export const getGameState = async (gamePk) => {
@@ -40,6 +53,7 @@ export const getGameState = async (gamePk) => {
     const response = await apiClient.get('/getGameDetails', { 
       params: { gamePk: numericGamePk } 
     });
+    
     return response.data.gameState;
   } catch (error) {
     console.error(`Error fetching game state for game ${gamePk}:`, error);

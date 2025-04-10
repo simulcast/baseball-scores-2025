@@ -127,7 +127,19 @@ const transformGameState = (gameData) => {
       third: false
     };
     
-    if (live.plays?.currentPlay?.runners) {
+    // Log the runner information for debugging
+    console.log('Current play runner data:', JSON.stringify(live.plays?.currentPlay?.runners || [])); 
+    console.log('Offense object:', JSON.stringify(live.linescore?.offense || {}));
+    
+    // First check the linescore offense data (more reliable for current state)
+    if (live.linescore?.offense) {
+      if (live.linescore.offense.first) bases.first = true;
+      if (live.linescore.offense.second) bases.second = true;
+      if (live.linescore.offense.third) bases.third = true;
+    }
+    
+    // Fall back to checking current play runners if needed
+    if (live.plays?.currentPlay?.runners && (!bases.first && !bases.second && !bases.third)) {
       for (const runner of live.plays.currentPlay.runners) {
         if (runner.movement) {
           const { start, end } = runner.movement;
@@ -137,6 +149,8 @@ const transformGameState = (gameData) => {
         }
       }
     }
+    
+    console.log('Final bases state:', bases);
     
     // Extract current batter and pitcher
     let currentBatter = null;
@@ -169,8 +183,20 @@ const transformGameState = (gameData) => {
     
     // Get the counts with safe defaults
     const linescore = live.linescore || {};
-    const { balls = 0, strikes = 0 } = linescore;
-    const outs = linescore.outs || 0;
+    const inningState = linescore.inningState || '';
+    
+    // Check if we're between innings (End or Middle)
+    const isBetweenInnings = inningState.startsWith('End') || inningState.startsWith('Middle');
+    
+    // Override count data if between innings
+    const balls = isBetweenInnings ? 0 : (linescore.balls || 0);
+    const strikes = isBetweenInnings ? 0 : (linescore.strikes || 0);
+    const outs = isBetweenInnings ? 0 : (linescore.outs || 0);
+    
+    // Clear runners if between innings
+    const runners = isBetweenInnings 
+      ? [false, false, false] 
+      : [bases.first, bases.second, bases.third];
     
     // Create the transformed state
     const transformedState = {
@@ -190,10 +216,12 @@ const transformGameState = (gameData) => {
       venue: data.venue?.name || 'Unknown',
       inning: linescore.currentInning || 0,
       isTopInning: linescore.isTopInning ?? true,
+      inningState: inningState,
+      isBetweenInnings: isBetweenInnings,
       balls,
       strikes,
       outs,
-      runners: [bases.first, bases.second, bases.third],
+      runners,
       homeScore: linescore.teams?.home?.runs || 0,
       awayScore: linescore.teams?.away?.runs || 0,
       currentPitcher,

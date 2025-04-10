@@ -37,12 +37,41 @@ class GameStateInterpreter {
    * Extract rhythm parameters from game state
    */
   _getRhythmParameters(gameState) {
-    const { balls, strikes, outs, inning, runners } = gameState;
+    const { balls, strikes, outs, inning, runners, isBetweenInnings, inningState } = gameState;
     const { rhythms } = musicConfig;
     
     // Determine if we're in early or late innings (7th inning or later)
     const isLateInning = inning >= 7;
     
+    // Handle between-innings state
+    if (isBetweenInnings || (inningState && (inningState.startsWith('End') || inningState.startsWith('Middle')))) {
+      // Use simpler rhythm pattern during breaks between innings
+      return {
+        balls: {
+          ...rhythms.balls,
+          pulses: 0
+        },
+        strikes: {
+          ...rhythms.strikes,
+          pulses: 0
+        },
+        outs: {
+          ...rhythms.outs,
+          pulses: 0
+        },
+        inning: {
+          ...rhythms.inning,
+          steps: isLateInning ? rhythms.inning.stepsLate : rhythms.inning.stepsEarly,
+          pulses: Math.min(inning, isLateInning ? rhythms.inning.stepsLate : rhythms.inning.stepsEarly)
+        },
+        runners: {
+          ...rhythms.runners,
+          pulses: 0
+        }
+      };
+    }
+    
+    // Normal in-play state
     return {
       balls: {
         ...rhythms.balls,
