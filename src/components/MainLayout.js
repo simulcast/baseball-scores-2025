@@ -44,7 +44,7 @@ const MainLayout = () => {
     refreshGameState
   } = useGameData({
     gamePk: selectedGameId,
-    refreshInterval: 1000
+    refreshInterval: 200
   });
 
   // Initialize the baseball audio system
@@ -141,8 +141,8 @@ const MainLayout = () => {
       />
 
       <Grid container spacing={3}>
-        {/* Main content */}
-        <Grid item xs={12} md={selectedGameId ? 8 : 12}>
+        {/* Main content - always keep full width for consistent card sizes */}
+        <Grid item xs={12}>
           {/* Games List */}
           <GameList 
             games={games}
@@ -155,9 +155,9 @@ const MainLayout = () => {
           />
         </Grid>
 
-        {/* Music visualizer sidebar when a game is selected */}
+        {/* Music visualizer as overlay or separate section when a game is selected */}
         {selectedGameId && isAudioEnabled && (
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} sx={{ mt: 3 }}>
             <MusicVisualizer 
               gameId={selectedGameId}
               gameState={gameState}
