@@ -27,7 +27,7 @@ class BaseballAudioEngine {
     this.currentMusicParams = null;
     
     // Create debounced update method
-    this.debouncedUpdateTempo = this._debounce(this._updateTempo.bind(this), 250);
+    this.debouncedUpdateTempo = this._debounce(this._updateTempo.bind(this), 500);
   }
   
   /**

@@ -44,7 +44,7 @@ const MainLayout = () => {
     refreshGameState
   } = useGameData({
     gamePk: selectedGameId,
-    refreshInterval: 500
+    refreshInterval: 1000
   });
 
   // Initialize the baseball audio system
@@ -78,10 +78,8 @@ const MainLayout = () => {
       setSelectedGameId(id);
       navigate(`/${id}`, { replace: true });
       
-      // Initialize audio if needed
-      if (isAudioEnabled && !isBaseballAudioInitialized) {
-        initializeAudio();
-      }
+      // Always initialize audio when selecting a game
+      initializeAudio();
     }
   };
   
@@ -139,6 +137,7 @@ const MainLayout = () => {
       {/* Header */}
       <Header 
         onTitleClick={goToDashboard}
+        showAudioControls={!!selectedGameId}
       />
 
       <Grid container spacing={3}>

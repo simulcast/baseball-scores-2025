@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { 
   Box, 
   Typography,
   Stack
 } from '@mui/material';
 import AudioControls from './AudioControls';
+import { AudioContext } from '../contexts/AudioContextExtended';
 
 /**
  * Header component that contains the app title
  */
-const Header = ({ onTitleClick }) => {
+const Header = ({ onTitleClick, showAudioControls = false }) => {
+  const { activeGameId } = useContext(AudioContext);
+  
   return (
     <Box sx={{ 
       display: 'flex', 
@@ -50,7 +53,7 @@ const Header = ({ onTitleClick }) => {
           ambient soundtracks for the national pastime
         </Typography>
       </Stack>
-      <AudioControls />
+      {showAudioControls && <AudioControls />}
     </Box>
   );
 };

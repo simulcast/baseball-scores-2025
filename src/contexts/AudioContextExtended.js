@@ -128,7 +128,13 @@ export const AudioProvider = ({ children }) => {
     
     // If we're selecting a new game
     if (gameId) {
-      // Initialize baseball audio if needed
+      // First initialize audio context if needed
+      if (!audioInitialized) {
+        const success = await initializeAudio();
+        if (!success) return;
+      }
+      
+      // Then initialize baseball audio if needed
       if (!baseballAudioInitialized) {
         const success = await initializeBaseballAudio();
         if (!success) return;
@@ -150,7 +156,7 @@ export const AudioProvider = ({ children }) => {
         baseballAudioEngineRef.current.stop();
       }
     }
-  }, [activeGameId, audioEnabled, baseballAudioInitialized, initializeBaseballAudio]);
+  }, [activeGameId, audioEnabled, audioInitialized, baseballAudioInitialized, initializeAudio, initializeBaseballAudio]);
 
   // NEW: Update game state
   const updateGameState = useCallback((gameState) => {
