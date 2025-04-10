@@ -15,7 +15,7 @@ const musicConfig = {
           enabled: true,
           decay: 1.5,
           preDelay: 0.01,
-          wet: 0.2
+          wet: .3
         },
         limiter: {
           enabled: true,
