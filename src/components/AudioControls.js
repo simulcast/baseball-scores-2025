@@ -4,7 +4,9 @@ import {
   IconButton, 
   Slider, 
   Stack,
-  Tooltip
+  Tooltip,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
@@ -19,6 +21,14 @@ const AudioControls = () => {
     setVolume: updateVolume,
     toggleAudio
   } = useContext(AudioContext);
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Don't render anything on mobile if audio is already initialized
+  if (isMobile && audioInitialized) {
+    return null;
+  }
 
   const handleVolumeChange = (event, newValue) => {
     updateVolume(newValue);
@@ -47,7 +57,7 @@ const AudioControls = () => {
           </IconButton>
         </Tooltip>
         
-        {audioInitialized && audioEnabled && (
+        {audioInitialized && audioEnabled && !isMobile && (
           <Slider
             aria-label="Volume"
             value={volume}
