@@ -30,7 +30,7 @@ const MainLayout = () => {
     }
   }, [gameId]);
   
-  // Get game data using our custom hook
+  // Get game data using our custom hook - use a consistent refresh interval for all data
   const { 
     games, 
     gamesLoading, 
@@ -44,7 +44,7 @@ const MainLayout = () => {
     refreshGameState
   } = useGameData({
     gamePk: selectedGameId,
-    refreshInterval: 200
+    refreshInterval: 200 // Fast refresh for all components
   });
 
   // Initialize the baseball audio system
@@ -117,6 +117,11 @@ const MainLayout = () => {
     }
   }, [selectedGameId, navigate]);
 
+  // Get the selected game details to pass to components
+  const selectedGame = selectedGameId && games.length > 0 
+    ? games.find(g => String(g.gamePk) === selectedGameId) 
+    : null;
+
   return (
     <Container 
       maxWidth="xl" 
@@ -152,16 +157,20 @@ const MainLayout = () => {
             onGameSelect={handleGameSelect}
             gameEvents={gameEvents}
             acknowledgeEvent={acknowledgeEvent}
+            // Pass detailed game state for possible use in game cards
+            detailedGameState={gameState}
           />
         </Grid>
 
-        {/* Music visualizer as overlay or separate section when a game is selected */}
+        {/* Music visualizer when a game is selected */}
         {selectedGameId && isAudioEnabled && (
           <Grid item xs={12} sx={{ mt: 3 }}>
             <MusicVisualizer 
               gameId={selectedGameId}
               gameState={gameState}
               gameEvents={gameEvents}
+              // Pass the selected game too for consistent data
+              selectedGame={selectedGame}
             />
           </Grid>
         )}

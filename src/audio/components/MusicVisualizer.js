@@ -6,7 +6,7 @@ import useBaseballAudio from '../../hooks/useBaseballAudio';
 /**
  * Visual representation of the musical elements generated from game state
  */
-const MusicVisualizer = ({ gameState, gameId, gameEvents }) => {
+const MusicVisualizer = ({ gameState, gameId, gameEvents, selectedGame }) => {
   const { 
     isActive, 
     isAudioEnabled, 
@@ -21,6 +21,8 @@ const MusicVisualizer = ({ gameState, gameId, gameEvents }) => {
   if (!isActive || !isAudioEnabled || !isBaseballAudioInitialized || !gameState) {
     return null;
   }
+
+  // The transformGameState function now handles ensuring consistent data between the visualizer and GameCard
 
   return (
     <Box
@@ -228,6 +230,15 @@ const MusicVisualizer = ({ gameState, gameId, gameEvents }) => {
                 "default")}
           />
         </Box>
+        
+        {/* Show data source info for debugging - can be removed in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <Box sx={{ mt: 2, pt: 1, borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+              Last updated: {new Date(gameState.lastUpdate).toLocaleTimeString()}
+            </Typography>
+          </Box>
+        )}
       </Stack>
     </Box>
   );

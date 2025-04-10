@@ -216,9 +216,17 @@ const BaseballDiamond = ({ runners = [] }) => {
  * @param {Object} props.game Game data
  * @param {boolean} props.isSelected Whether this game is currently selected
  * @param {Function} props.onSelect Callback for when the game is clicked
+ * @param {Array} props.events Game-specific events
+ * @param {Function} props.onAcknowledgeEvent Callback to acknowledge events
  * @returns {JSX.Element} Game card component
  */
-const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
+const GameCard = ({ 
+  game, 
+  isSelected = false, 
+  onSelect = () => {},
+  events = [],
+  onAcknowledgeEvent = () => {}
+}) => {
   // Extract game data
   const {
     gamePk, 
@@ -255,6 +263,18 @@ const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
     linescore?.offense?.second?.id !== undefined,
     linescore?.offense?.third?.id !== undefined
   ];
+
+  // Handle event acknowledgment
+  React.useEffect(() => {
+    if (events && events.length > 0) {
+      // Auto-acknowledge events after a delay
+      const timer = setTimeout(() => {
+        events.forEach(event => onAcknowledgeEvent(event.id));
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [events, onAcknowledgeEvent]);
 
   // Card content
   const cardContent = (
@@ -310,6 +330,19 @@ const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
   
   if (isSelected) {
     finalStyles = { ...finalStyles, ...cardStyles.selected };
+  }
+  
+  // Add animation for events
+  if (events && events.length > 0) {
+    finalStyles = { 
+      ...finalStyles, 
+      animation: 'pulse 1.5s infinite',
+      '@keyframes pulse': {
+        '0%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.7)' },
+        '70%': { boxShadow: '0 0 0 15px rgba(255, 255, 255, 0)' },
+        '100%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0)' }
+      }
+    };
   }
 
   // Render card
