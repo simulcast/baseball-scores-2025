@@ -20,6 +20,10 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
   const [gameLoading, setGameLoading] = useState(false);
   const [gameError, setGameError] = useState(null);
   
+  // State for game events
+  const [gameEvents, setGameEvents] = useState([]);
+  const previousGameStateRef = useRef(null);
+  
   // Interval IDs for cleanup
   const gamesIntervalRef = useRef(null);
   const gameIntervalRef = useRef(null);
@@ -31,14 +35,56 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
     try {
       setGamesError(null);
       const data = await getTodaysGames(date);
-      setGames(data);
+      
+      // If we have detailed game state, update the corresponding game in the list
+      if (gamePk && gameState) {
+        const updatedGames = data.map(game => {
+          if (String(game.gamePk) === String(gamePk) && game.status.abstractGameState === 'Live') {
+            // Create a consistent game object that combines API data with our processed gameState
+            return {
+              ...game,
+              // Add or update linescore properties with more accurate data from gameState
+              linescore: {
+                ...game.linescore,
+                balls: gameState.balls,
+                strikes: gameState.strikes,
+                outs: gameState.outs,
+                currentInning: gameState.inning,
+                isTopInning: gameState.isTopInning,
+                // Update runners on base
+                offense: {
+                  first: gameState.runners[0] ? { id: 1 } : undefined,
+                  second: gameState.runners[1] ? { id: 1 } : undefined,
+                  third: gameState.runners[2] ? { id: 1 } : undefined
+                }
+              },
+              // Update teams scores
+              teams: {
+                ...game.teams,
+                home: {
+                  ...game.teams.home,
+                  score: gameState.homeScore
+                },
+                away: {
+                  ...game.teams.away,
+                  score: gameState.awayScore
+                }
+              }
+            };
+          }
+          return game;
+        });
+        setGames(updatedGames);
+      } else {
+        setGames(data);
+      }
     } catch (error) {
       setGamesError('Failed to fetch games');
       console.error('Error fetching games:', error);
     } finally {
       setGamesLoading(false);
     }
-  }, [date]);
+  }, [date, gamePk, gameState]);
 
   /**
    * Fetch detailed game state for a specific game
@@ -52,6 +98,15 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
       
       const data = await getGameState(gamePk);
       setGameState(data);
+      
+      // Check for events by comparing with previous state
+      if (previousGameStateRef.current) {
+        detectGameEvents(previousGameStateRef.current, data);
+      }
+      
+      // Update reference for next comparison
+      previousGameStateRef.current = data;
+      
     } catch (error) {
       setGameError('Failed to fetch game details');
       console.error('Error fetching game details:', error);
@@ -59,6 +114,55 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
       setGameLoading(false);
     }
   }, [gamePk]);
+
+  /**
+   * Detect game events by comparing previous and current state
+   */
+  const detectGameEvents = useCallback((prevState, currentState) => {
+    if (!prevState || !currentState) return;
+    
+    const newEvents = [];
+    
+    // Detect scoring plays
+    if (currentState.homeScore > prevState.homeScore) {
+      newEvents.push({ 
+        id: `run-home-${Date.now()}`,
+        type: 'runScored', 
+        team: 'home',
+        timestamp: Date.now(),
+        acknowledged: false 
+      });
+    }
+    
+    if (currentState.awayScore > prevState.awayScore) {
+      newEvents.push({ 
+        id: `run-away-${Date.now()}`,
+        type: 'runScored', 
+        team: 'away',
+        timestamp: Date.now(),
+        acknowledged: false
+      });
+    }
+    
+    // Add more event detection here as needed...
+    
+    if (newEvents.length > 0) {
+      setGameEvents(prev => [...prev, ...newEvents]);
+    }
+  }, []);
+
+  /**
+   * Mark an event as acknowledged
+   */
+  const acknowledgeEvent = useCallback((eventId) => {
+    setGameEvents(prev => 
+      prev.map(event => 
+        event.id === eventId 
+          ? { ...event, acknowledged: true } 
+          : event
+      )
+    );
+  }, []);
 
   // Initial fetch and set up refresh interval for games
   useEffect(() => {
@@ -81,7 +185,8 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
       fetchGameState();
       
       // Set up refresh interval for game state
-      gameIntervalRef.current = setInterval(fetchGameState, refreshInterval / 2);
+      // Use the same refresh interval to keep everything in sync
+      gameIntervalRef.current = setInterval(fetchGameState, refreshInterval);
       
       // Clean up interval on unmount
       return () => {
@@ -89,6 +194,10 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
           clearInterval(gameIntervalRef.current);
         }
       };
+    } else {
+      // Reset game state when no game is selected
+      setGameState(null);
+      previousGameStateRef.current = null;
     }
   }, [gamePk, fetchGameState, refreshInterval]);
 
@@ -99,6 +208,8 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
     gameState,
     gameLoading,
     gameError,
+    gameEvents,
+    acknowledgeEvent,
     refreshGames: fetchGames,
     refreshGameState: fetchGameState
   };

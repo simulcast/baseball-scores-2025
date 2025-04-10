@@ -17,7 +17,10 @@ const GameList = ({
   gamesLoading, 
   gamesError, 
   selectedGameId, 
-  onGameSelect
+  onGameSelect,
+  gameEvents,
+  acknowledgeEvent,
+  detailedGameState
 }) => {
   return (
     <>
@@ -42,15 +45,28 @@ const GameList = ({
           <>
             {games
               .filter(game => game.status.abstractGameState === 'Live')
-              .map(game => (
-                <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
-                  <GameCard 
-                    game={game} 
-                    isSelected={String(game.gamePk) === selectedGameId}
-                    onSelect={() => onGameSelect(String(game.gamePk))}
-                  />
-                </Grid>
-              ))
+              .map(game => {
+                // If this is the selected game and we have detailed state, enhance the game object
+                const isSelected = String(game.gamePk) === selectedGameId;
+                let enhancedGame = game;
+                
+                // Pass any events related to this game
+                const gameSpecificEvents = gameEvents && gameEvents.length > 0 
+                  ? gameEvents.filter(event => !event.acknowledged)
+                  : [];
+                
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
+                    <GameCard 
+                      game={enhancedGame}
+                      isSelected={isSelected}
+                      onSelect={() => onGameSelect(String(game.gamePk))}
+                      events={gameSpecificEvents}
+                      onAcknowledgeEvent={acknowledgeEvent}
+                    />
+                  </Grid>
+                );
+              })
             }
             {(games.filter(game => game.status.abstractGameState === 'Final').length > 0 || 
               games.filter(game => game.status.abstractGameState === 'Preview').length > 0) && (
