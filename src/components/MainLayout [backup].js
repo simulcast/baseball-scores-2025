@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Grid } from '@mui/material';
+import { Container } from '@mui/material';
 
 // Import components
-import Header from '../components/Header';
+import Header from './Header';
 import GameList from '../pages/GameList';
-import MusicVisualizer from '../audio/components/MusicVisualizer';
 
 // Import hooks
 import useGameData from '../hooks/useGameData';
-import useBaseballAudio from '../hooks/useBaseballAudio';
 
 /**
  * MainLayout component that handles game selection and data loading
@@ -37,26 +35,10 @@ const MainLayout = () => {
     gamesError, 
     gameState,
     gameLoading,
-    gameError,
-    gameEvents,
-    acknowledgeEvent,
-    refreshGames,
-    refreshGameState
+    gameError
   } = useGameData({
     gamePk: selectedGameId,
-    refreshInterval: 500
-  });
-
-  // Initialize the baseball audio system
-  const { 
-    isActive, 
-    isAudioEnabled, 
-    isBaseballAudioInitialized,
-    initializeAudio 
-  } = useBaseballAudio({
-    gameId: selectedGameId,
-    gameState,
-    gameEvents
+    refreshInterval: 1000
   });
 
   // Handle game selection
@@ -77,11 +59,6 @@ const MainLayout = () => {
       // Select new game
       setSelectedGameId(id);
       navigate(`/${id}`, { replace: true });
-      
-      // Initialize audio if needed
-      if (isAudioEnabled && !isBaseballAudioInitialized) {
-        initializeAudio();
-      }
     }
   };
   
@@ -141,34 +118,16 @@ const MainLayout = () => {
         onTitleClick={goToDashboard}
       />
 
-      <Grid container spacing={3}>
-        {/* Main content */}
-        <Grid item xs={12} md={selectedGameId ? 8 : 12}>
-          {/* Games List */}
-          <GameList 
-            games={games}
-            gamesLoading={gamesLoading}
-            gamesError={gamesError}
-            selectedGameId={selectedGameId}
-            onGameSelect={handleGameSelect}
-            gameEvents={gameEvents}
-            acknowledgeEvent={acknowledgeEvent}
-          />
-        </Grid>
-
-        {/* Music visualizer sidebar when a game is selected */}
-        {selectedGameId && isAudioEnabled && (
-          <Grid item xs={12} md={4}>
-            <MusicVisualizer 
-              gameId={selectedGameId}
-              gameState={gameState}
-              gameEvents={gameEvents}
-            />
-          </Grid>
-        )}
-      </Grid>
+      {/* Games List */}
+      <GameList 
+        games={games}
+        gamesLoading={gamesLoading}
+        gamesError={gamesError}
+        selectedGameId={selectedGameId}
+        onGameSelect={handleGameSelect}
+      />
     </Container>
   );
 };
 
-export default MainLayout;
+export default MainLayout; 

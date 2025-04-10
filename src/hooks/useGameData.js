@@ -23,6 +23,10 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
   // Interval IDs for cleanup
   const gamesIntervalRef = useRef(null);
   const gameIntervalRef = useRef(null);
+  
+  // Game events state
+  const [gameEvents, setGameEvents] = useState([]);
+  const previousGameStateRef = useRef(null);
 
   /**
    * Fetch all games for today or specified date
@@ -52,6 +56,8 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
       
       const data = await getGameState(gamePk);
       setGameState(data);
+      
+      // Game events detection could go here if needed
     } catch (error) {
       setGameError('Failed to fetch game details');
       console.error('Error fetching game details:', error);
@@ -81,7 +87,8 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
       fetchGameState();
       
       // Set up refresh interval for game state
-      gameIntervalRef.current = setInterval(fetchGameState, refreshInterval / 2);
+      // Use the same interval as games list for synchronization
+      gameIntervalRef.current = setInterval(fetchGameState, refreshInterval);
       
       // Clean up interval on unmount
       return () => {
@@ -92,6 +99,11 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
     }
   }, [gamePk, fetchGameState, refreshInterval]);
 
+  // Acknowledge game event (can be called by components)
+  const acknowledgeEvent = useCallback((eventId) => {
+    setGameEvents(current => current.filter(event => event.id !== eventId));
+  }, []);
+
   return {
     games,
     gamesLoading,
@@ -99,6 +111,8 @@ const useGameData = ({ date, gamePk, refreshInterval = 5000 }) => {
     gameState,
     gameLoading,
     gameError,
+    gameEvents,
+    acknowledgeEvent,
     refreshGames: fetchGames,
     refreshGameState: fetchGameState
   };

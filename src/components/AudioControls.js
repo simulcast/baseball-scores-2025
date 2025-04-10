@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { 
   Box, 
   IconButton, 
@@ -9,19 +9,19 @@ import {
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
-import { useAudio } from '../audio/hooks/useAudio';
+import { AudioContext } from '../contexts/AudioContextExtended';
 
 const AudioControls = () => {
   const { 
     audioEnabled, 
     audioInitialized, 
-    volume, 
-    setVolume, 
+    volume,
+    setVolume: updateVolume,
     toggleAudio
-  } = useAudio();
+  } = useContext(AudioContext);
 
   const handleVolumeChange = (event, newValue) => {
-    setVolume(newValue);
+    updateVolume(newValue);
   };
 
   return (

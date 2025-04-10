@@ -7,7 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import MainLayout from './components/MainLayout';
 
 // Import audio provider
-import { AudioProvider } from './audio/contexts/AudioContext';
+import { AudioProvider } from './contexts/AudioContextExtended';
 
 // Create a theme instance
 const theme = createTheme({
