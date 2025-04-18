@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Grid } from '@mui/material';
 
@@ -20,6 +20,9 @@ const MainLayout = () => {
   
   // State for selected game
   const [selectedGameId, setSelectedGameId] = useState(null);
+  
+  // Reference for test game state
+  const testGameStateRef = useRef(null);
   
   // Set selected game from URL parameter
   useEffect(() => {
@@ -43,11 +46,14 @@ const MainLayout = () => {
     refreshInterval: 100 // Very fast refresh for near real-time updates
   });
 
-  // Get the selected game state
-  const selectedGameState = selectedGameId ? getGameState(selectedGameId) : null;
+  // Get the selected game state - handle both API and test games
+  const selectedGameState = selectedGameId ? 
+    (selectedGameId.startsWith('test-') ? testGameStateRef.current : getGameState(selectedGameId))
+    : null;
   
-  // Get events for the selected game
-  const selectedGameEvents = selectedGameId ? getGameEvents(selectedGameId) : [];
+  // Get events for the selected game (test games don't have events yet)
+  const selectedGameEvents = (selectedGameId && !selectedGameId.startsWith('test-')) ? 
+    getGameEvents(selectedGameId) : [];
   
   // Initialize the baseball audio system
   const { 
@@ -61,14 +67,25 @@ const MainLayout = () => {
     gameEvents: selectedGameEvents
   });
 
+  // Handler for registering a test game state
+  const registerTestGame = useCallback((testGameId, gameState) => {
+    // Store the test game state in our ref
+    testGameStateRef.current = gameState;
+  }, []);
+  
   // Handle game selection
   const handleGameSelect = (id) => {
-    // Find the game
-    const game = games.find(g => String(g.gamePk) === id);
+    // Handle test games differently than real games
+    const isTestGame = id.startsWith('test-');
     
-    // Only allow selection of in-progress games
-    if (!game || game.status.abstractGameState !== 'Live') {
-      return;
+    if (!isTestGame) {
+      // For real games, find the game and check if it's in progress
+      const game = games.find(g => String(g.gamePk) === id);
+      
+      // Only allow selection of in-progress games
+      if (!game || game.status.abstractGameState !== 'Live') {
+        return;
+      }
     }
     
     if (selectedGameId === id) {
@@ -78,7 +95,11 @@ const MainLayout = () => {
     } else {
       // Select new game
       setSelectedGameId(id);
-      navigate(`/${id}`, { replace: true });
+      
+      // For test games, don't modify the URL to avoid route issues
+      if (!isTestGame) {
+        navigate(`/${id}`, { replace: true });
+      }
       
       // Always initialize audio when selecting a game
       initializeAudio();
@@ -87,7 +108,8 @@ const MainLayout = () => {
   
   // Check if selected game is still in progress
   useEffect(() => {
-    if (selectedGameId && games.length > 0) {
+    // Skip check for test games
+    if (selectedGameId && !selectedGameId.startsWith('test-') && games.length > 0) {
       const selectedGame = games.find(g => String(g.gamePk) === selectedGameId);
       if (!selectedGame || selectedGame.status.abstractGameState !== 'Live') {
         // Clear selection if game is no longer in progress
@@ -155,6 +177,7 @@ const MainLayout = () => {
             onGameSelect={handleGameSelect}
             getGameEvents={getGameEvents}
             acknowledgeEvent={acknowledgeEvent}
+            registerTestGame={registerTestGame}
           />
         </Grid>
 

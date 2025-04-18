@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Grid, 
   Box, 
   CircularProgress,
-  Alert
+  Alert,
+  Typography,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 
 // Import components
 import GameCard from '../components/GameCard';
+import TestGameCard from '../components/TestGameCard';
 
 /**
  * GameList component that shows all games
@@ -20,8 +24,28 @@ const GameList = ({
   selectedGameId, 
   onGameSelect,
   getGameEvents,
-  acknowledgeEvent
+  acknowledgeEvent,
+  registerTestGame
 }) => {
+  // State for controlling the test game visibility
+  const [showTestGame, setShowTestGame] = useState(true);
+  
+  // State for test game
+  const [testGameState, setTestGameState] = useState(null);
+  
+  // Handle selection of test game
+  const handleTestGameSelect = (testGameId, gameState) => {
+    // Register the test game with the parent component so audio can use it
+    if (registerTestGame) {
+      registerTestGame(testGameId, gameState);
+    }
+    
+    // Store the state locally
+    setTestGameState(gameState);
+    
+    // Call the normal game selection handler
+    onGameSelect(testGameId);
+  };
   return (
     <>
       {/* Loading state */}
@@ -38,8 +62,43 @@ const GameList = ({
         </Alert>
       )}
 
+      {/* Test Mode Toggle */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showTestGame}
+              onChange={(e) => setShowTestGame(e.target.checked)}
+              color="warning"
+            />
+          }
+          label={
+            <Typography variant="body2" sx={{ color: '#f5a623' }}>
+              Test Mode
+            </Typography>
+          }
+        />
+      </Box>
+
       {/* Games grid */}
       <Grid container spacing={3}>
+        {/* Test Game Card */}
+        {showTestGame && (
+          <Grid item xs={12} sm={6} md={4}>
+            <TestGameCard 
+              onSelect={handleTestGameSelect}
+              isSelected={selectedGameId && selectedGameId.startsWith('test-')}
+            />
+          </Grid>
+        )}
+        
+        {/* Divider after test game if there are live games */}
+        {showTestGame && games.filter(game => game.status.abstractGameState === 'Live').length > 0 && (
+          <Grid item xs={12}>
+            <Box sx={{ my: 2, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }} />
+          </Grid>
+        )}
+        
         {/* Active games */}
         {games.filter(game => game.status.abstractGameState === 'Live').length > 0 && (
           <>
