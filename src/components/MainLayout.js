@@ -40,7 +40,7 @@ const MainLayout = () => {
     getGameEvents,
     acknowledgeEvent
   } = useGameData({
-    refreshInterval: 200 // Fast refresh for all components
+    refreshInterval: 100 // Very fast refresh for near real-time updates
   });
 
   // Get the selected game state

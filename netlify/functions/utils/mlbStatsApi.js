@@ -185,8 +185,11 @@ const transformGameState = (gameData) => {
     const linescore = live.linescore || {};
     const inningState = linescore.inningState || '';
     
-    // Check if we're between innings (End or Middle)
-    const isBetweenInnings = inningState.startsWith('End') || inningState.startsWith('Middle');
+    // Check if we're between innings (End, Middle, or Mid)
+    // API sometimes uses "Middle" and sometimes "Mid"
+    const isBetweenInnings = inningState.startsWith('End') || 
+                            inningState.startsWith('Middle') || 
+                            inningState.startsWith('Mid');
     
     // Override count data if between innings
     const balls = isBetweenInnings ? 0 : (linescore.balls || 0);

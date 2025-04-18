@@ -44,7 +44,7 @@ class GameStateInterpreter {
     const isLateInning = inning >= 7;
     
     // Handle between-innings state
-    if (isBetweenInnings || (inningState && (inningState.startsWith('End') || inningState.startsWith('Middle')))) {
+    if (isBetweenInnings || (inningState && (inningState.startsWith('End') || inningState.startsWith('Middle') || inningState.startsWith('Mid')))) {
       // Use simpler rhythm pattern during breaks between innings
       return {
         balls: {

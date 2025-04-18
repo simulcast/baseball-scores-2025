@@ -180,7 +180,13 @@ export const AudioProvider = ({ children }) => {
     
     // Update the baseball audio engine with the new game state
     if (baseballAudioEngineRef.current) {
-      console.log('[AudioContext] Updating audio engine with gameState, runners:', gameState.runners);
+      console.log('[AudioContext] Updating audio engine with gameState:', {
+        runners: gameState.runners,
+        inningState: gameState.inningState,
+        isBetweenInnings: gameState.isBetweenInnings,
+        inning: gameState.inning,
+        isTopInning: gameState.isTopInning
+      });
       baseballAudioEngineRef.current.updateGameState(gameState);
     }
   }, [activeGameId, baseballAudioInitialized]);

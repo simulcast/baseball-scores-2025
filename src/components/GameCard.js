@@ -248,9 +248,12 @@ const GameCard = ({
   // Use gameState data if available (should be available for all live games)
   // Fall back to basic linescore data if needed
   
-  // Get current inning
+  // Get current inning - respect special inning states like "Mid" and "End"
   const inningInfo = gameState ? 
-    `${gameState.isTopInning ? 'Top' : 'Bottom'} ${gameState.inning}` : 
+    (gameState.inningState && 
+     (gameState.inningState.startsWith('Mid') || gameState.inningState.startsWith('End')) ? 
+      `${gameState.inningState} ${gameState.inning}` : 
+      `${gameState.isTopInning ? 'Top' : 'Bottom'} ${gameState.inning}`) : 
     (baseLinescoreData?.currentInning ? 
       `${baseLinescoreData.inningState} ${baseLinescoreData.currentInning}` : 
       '');
