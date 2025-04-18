@@ -33,21 +33,22 @@ const MainLayout = () => {
   // Get game data using our custom hook - use a consistent refresh interval for all data
   const { 
     games, 
+    getGameState,
     gamesLoading, 
     gamesError, 
-    gameState,
-    gameLoading,
-    gameError,
     gameEvents,
-    acknowledgeEvent,
-    refreshGames,
-    refreshGameState
+    getGameEvents,
+    acknowledgeEvent
   } = useGameData({
-    gamePk: selectedGameId,
-    refreshInterval: 200, // Fast refresh for all components
-    refreshAllGames: true // Ensure all games update at the same frequency
+    refreshInterval: 200 // Fast refresh for all components
   });
 
+  // Get the selected game state
+  const selectedGameState = selectedGameId ? getGameState(selectedGameId) : null;
+  
+  // Get events for the selected game
+  const selectedGameEvents = selectedGameId ? getGameEvents(selectedGameId) : [];
+  
   // Initialize the baseball audio system
   const { 
     isActive, 
@@ -56,8 +57,8 @@ const MainLayout = () => {
     initializeAudio 
   } = useBaseballAudio({
     gameId: selectedGameId,
-    gameState,
-    gameEvents
+    gameState: selectedGameState,
+    gameEvents: selectedGameEvents
   });
 
   // Handle game selection
@@ -118,11 +119,6 @@ const MainLayout = () => {
     }
   }, [selectedGameId, navigate]);
 
-  // Get the selected game details to pass to components
-  const selectedGame = selectedGameId && games.length > 0 
-    ? games.find(g => String(g.gamePk) === selectedGameId) 
-    : null;
-
   return (
     <Container 
       maxWidth="xl" 
@@ -152,14 +148,13 @@ const MainLayout = () => {
           {/* Games List */}
           <GameList 
             games={games}
+            getGameState={getGameState}
             gamesLoading={gamesLoading}
             gamesError={gamesError}
             selectedGameId={selectedGameId}
             onGameSelect={handleGameSelect}
-            gameEvents={gameEvents}
+            getGameEvents={getGameEvents}
             acknowledgeEvent={acknowledgeEvent}
-            // Pass detailed game state for possible use in game cards
-            detailedGameState={gameState}
           />
         </Grid>
 
@@ -168,10 +163,8 @@ const MainLayout = () => {
           <Grid item xs={12} sx={{ mt: 3 }}>
             <MusicVisualizer 
               gameId={selectedGameId}
-              gameState={gameState}
-              gameEvents={gameEvents}
-              // Pass the selected game too for consistent data
-              selectedGame={selectedGame}
+              gameEvents={selectedGameEvents}
+              gameState={selectedGameState}
             />
           </Grid>
         )}

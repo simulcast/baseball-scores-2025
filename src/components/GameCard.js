@@ -213,28 +213,28 @@ const BaseballDiamond = ({ runners = [] }) => {
  * Game card component for the dashboard
  * 
  * @param {Object} props Component props
- * @param {Object} props.game Game data
+ * @param {Object} props.game Game data from the API
+ * @param {Object} props.gameState Detailed game state data for any game (not just selected)
  * @param {boolean} props.isSelected Whether this game is currently selected
  * @param {Function} props.onSelect Callback for when the game is clicked
  * @param {Array} props.events Game-specific events
  * @param {Function} props.onAcknowledgeEvent Callback to acknowledge events
- * @param {Object} props.detailedGameState Optional detailed game state for more accurate data
  * @returns {JSX.Element} Game card component
  */
 const GameCard = ({ 
   game, 
+  gameState,
   isSelected = false, 
   onSelect = () => {},
   events = [],
-  onAcknowledgeEvent = () => {},
-  detailedGameState = null
+  onAcknowledgeEvent = () => {}
 }) => {
   // Extract game data
   const {
     gamePk, 
     status, 
     teams, 
-    linescore,
+    linescore: baseLinescoreData,
     gameDate
   } = game;
 
@@ -245,47 +245,31 @@ const GameCard = ({
   // Format game time
   const gameTime = gameDate ? format(new Date(gameDate), 'h:mm a', { timeZone: 'local' }) : '';
 
-  // Get current inning if in progress
-  const inningInfo = linescore?.currentInning 
-    ? `${linescore.inningState} ${linescore.currentInning}` 
-    : '';
-
-  // Get score for teams
-  const awayScore = teams.away.score !== undefined ? teams.away.score : 0;
-  const homeScore = teams.home.score !== undefined ? teams.home.score : 0;
-
-  // Use detailed game state if available (for the selected game)
-  const balls = detailedGameState ? detailedGameState.balls : (linescore?.balls || 0);
-  const strikes = detailedGameState ? detailedGameState.strikes : (linescore?.strikes || 0);
-  const outs = detailedGameState ? detailedGameState.outs : (linescore?.outs || 0);
+  // Use gameState data if available (should be available for all live games)
+  // Fall back to basic linescore data if needed
   
-  // Get runners on base
-  // Determine best source - prefer any source that has runners
-  const gameCardRunners = [
-    linescore?.offense?.first?.id !== undefined,
-    linescore?.offense?.second?.id !== undefined,
-    linescore?.offense?.third?.id !== undefined
+  // Get current inning
+  const inningInfo = gameState ? 
+    `${gameState.isTopInning ? 'Top' : 'Bottom'} ${gameState.inning}` : 
+    (baseLinescoreData?.currentInning ? 
+      `${baseLinescoreData.inningState} ${baseLinescoreData.currentInning}` : 
+      '');
+
+  // Get scores
+  const homeScore = gameState ? gameState.homeScore : (teams.home.score || 0);
+  const awayScore = gameState ? gameState.awayScore : (teams.away.score || 0);
+
+  // Get counts
+  const balls = gameState ? gameState.balls : (baseLinescoreData?.balls || 0);
+  const strikes = gameState ? gameState.strikes : (baseLinescoreData?.strikes || 0);
+  const outs = gameState ? gameState.outs : (baseLinescoreData?.outs || 0);
+  
+  // Get runners
+  const runnersOnBase = gameState ? gameState.runners : [
+    baseLinescoreData?.offense?.first?.id !== undefined,
+    baseLinescoreData?.offense?.second?.id !== undefined,
+    baseLinescoreData?.offense?.third?.id !== undefined
   ];
-  
-  const detailedRunners = detailedGameState?.runners || [false, false, false];
-  
-  // Choose data source that actually has runners (if any)
-  const gameCardHasRunners = gameCardRunners.some(Boolean);
-  const detailedHasRunners = Array.isArray(detailedRunners) && detailedRunners.some(Boolean);
-  
-  // For debugging
-  if (isSelected) {
-    console.log('GameCard runners:', gameCardRunners);
-    console.log('Detailed runners:', detailedRunners);
-    console.log('Using runners from: ' + (gameCardHasRunners ? 'game card' : 
-                                         detailedHasRunners ? 'detailed state' : 'no runners'));
-  }
-  
-  // CRITICAL FIX: Prefer the source that actually has runners
-  // If both have runners or neither have runners, use gameCard data
-  const runnersOnBase = gameCardHasRunners ? gameCardRunners : 
-                        detailedHasRunners ? detailedRunners : 
-                        [false, false, false];
 
   // Handle event acknowledgment
   React.useEffect(() => {

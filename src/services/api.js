@@ -60,3 +60,25 @@ export const getGameState = async (gamePk) => {
     throw error;
   }
 };
+
+/**
+ * Get detailed state for multiple games simultaneously
+ * @param {Array} gamePkArray Array of game IDs to fetch details for
+ * @returns {Promise<Object>} Object mapping game IDs to game states
+ */
+export const getMultipleGameStates = async (gamePkArray) => {
+  try {
+    // Only process live games
+    const liveGameIds = gamePkArray.filter(id => id !== null && id !== undefined);
+    if (liveGameIds.length === 0) return {};
+    
+    const response = await apiClient.get('/getMultipleGameDetails', { 
+      params: { gamePks: liveGameIds.join(',') } 
+    });
+    
+    return response.data.gameStates || {};
+  } catch (error) {
+    console.error(`Error fetching multiple game states:`, error);
+    return {};
+  }
+};

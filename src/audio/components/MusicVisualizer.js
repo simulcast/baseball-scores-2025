@@ -6,7 +6,7 @@ import useBaseballAudio from '../../hooks/useBaseballAudio';
 /**
  * Visual representation of the musical elements generated from game state
  */
-const MusicVisualizer = ({ gameState, gameId, gameEvents, selectedGame }) => {
+const MusicVisualizer = ({ gameId, gameEvents, gameState }) => {
   const { 
     isActive, 
     isAudioEnabled, 
@@ -22,7 +22,7 @@ const MusicVisualizer = ({ gameState, gameId, gameEvents, selectedGame }) => {
     return null;
   }
 
-  // The transformGameState function now handles ensuring consistent data between the visualizer and GameCard
+  // We're using the same game state that's used in the GameCard component
 
   return (
     <Box

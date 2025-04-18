@@ -14,13 +14,13 @@ import GameCard from '../components/GameCard';
  */
 const GameList = ({ 
   games, 
+  getGameState,
   gamesLoading, 
   gamesError, 
   selectedGameId, 
   onGameSelect,
-  gameEvents,
-  acknowledgeEvent,
-  detailedGameState
+  getGameEvents,
+  acknowledgeEvent
 }) => {
   return (
     <>
@@ -46,69 +46,20 @@ const GameList = ({
             {games
               .filter(game => game.status.abstractGameState === 'Live')
               .map(game => {
-                // If this is the selected game and we have detailed state, enhance the game object
-                const isSelected = String(game.gamePk) === selectedGameId;
-                
-                // Check if we need to use detailed game state data
-                let enhancedGame = game;
-                
-                // If there are detailed game state, use it for the selected game only
-                if (isSelected && detailedGameState && String(game.gamePk) === selectedGameId) {
-                  console.log('Using detailed game state for selected game', detailedGameState);
-                  console.log('Runner states in detailed data:', detailedGameState.runners);
-                  console.log('Current linescore offense data:', game.linescore?.offense);
-                  
-                  // Determine which runner data to use (prioritize non-empty sources)
-                  const useDetailedRunners = Array.isArray(detailedGameState.runners) && 
-                                             detailedGameState.runners.some(Boolean);
-                  
-                  const apiHasRunners = !!(game.linescore?.offense?.first?.id || 
-                                          game.linescore?.offense?.second?.id || 
-                                          game.linescore?.offense?.third?.id);
-                  
-                  // Log which source we're using
-                  console.log('Using runners from: ' + 
-                             (useDetailedRunners ? 'detailed state' : 
-                              apiHasRunners ? 'game linescore' : 'no runners available'));
-                  
-                  // Choose runner data source (prefer data with runners)
-                  const finalRunners = apiHasRunners ? 
-                                      [game.linescore?.offense?.first?.id !== undefined,
-                                       game.linescore?.offense?.second?.id !== undefined,
-                                       game.linescore?.offense?.third?.id !== undefined] :
-                                      useDetailedRunners ? detailedGameState.runners :
-                                      [false, false, false];
-                  
-                  console.log('Final runner state:', finalRunners);
-                  
-                  // Use the runners data to override the linescore
-                  enhancedGame = {
-                    ...game,
-                    linescore: {
-                      ...game.linescore,
-                      offense: {
-                        first: finalRunners[0] ? { id: 1 } : undefined,
-                        second: finalRunners[1] ? { id: 1 } : undefined,
-                        third: finalRunners[2] ? { id: 1 } : undefined
-                      }
-                    }
-                  };
-                }
-                
-                // Pass any events related to this game
-                const gameSpecificEvents = gameEvents && gameEvents.length > 0 
-                  ? gameEvents.filter(event => !event.acknowledged)
-                  : [];
+                const gameId = String(game.gamePk);
+                const isSelected = gameId === selectedGameId;
+                const gameState = getGameState(gameId);
+                const gameSpecificEvents = getGameEvents(gameId);
                 
                 return (
                   <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
                     <GameCard 
-                      game={enhancedGame}
+                      game={game}
+                      gameState={gameState}
                       isSelected={isSelected}
-                      onSelect={() => onGameSelect(String(game.gamePk))}
+                      onSelect={() => onGameSelect(gameId)}
                       events={gameSpecificEvents}
                       onAcknowledgeEvent={acknowledgeEvent}
-                      detailedGameState={isSelected ? detailedGameState : null}
                     />
                   </Grid>
                 );
@@ -175,4 +126,4 @@ const GameList = ({
   );
 };
 
-export default GameList; 
+export default GameList;
