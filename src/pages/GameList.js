@@ -27,8 +27,8 @@ const GameList = ({
   acknowledgeEvent,
   registerTestGame
 }) => {
-  // State for controlling the test game visibility
-  const [showTestGame, setShowTestGame] = useState(true);
+  // State for controlling the test game visibility - off by default
+  const [showTestGame, setShowTestGame] = useState(false);
   
   // State for test game
   const [testGameState, setTestGameState] = useState(null);
