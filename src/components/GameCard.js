@@ -355,18 +355,7 @@ const GameCard = ({
     finalStyles = { ...finalStyles, ...cardStyles.selected };
   }
   
-  // Add animation for events
-  if (events && events.length > 0) {
-    finalStyles = { 
-      ...finalStyles, 
-      animation: 'pulse 1.5s infinite',
-      '@keyframes pulse': {
-        '0%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0.7)' },
-        '70%': { boxShadow: '0 0 0 15px rgba(255, 255, 255, 0)' },
-        '100%': { boxShadow: '0 0 0 0 rgba(255, 255, 255, 0)' }
-      }
-    };
-  }
+  // No pulsing animation for events
 
   // Render card
   return (

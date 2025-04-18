@@ -38,7 +38,7 @@ const musicConfig = {
       balls: {
         steps: 4,
         rotation: 0,
-        subdivision: "8n",
+        subdivision: "16n",
         volume: -8
       },
       strikes: {
@@ -50,7 +50,7 @@ const musicConfig = {
       outs: {
         steps: 3,
         rotation: 0,
-        subdivision: "8n.",
+        subdivision: "16n",
         volume: -4
       },
       inning: {
@@ -63,8 +63,8 @@ const musicConfig = {
       runners: {
         steps: 3,
         rotation: 0,
-        subdivision: "8n",
-        volume: -5
+        subdivision: "32n",
+        volume: -12
       }
     },
     
