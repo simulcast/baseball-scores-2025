@@ -211,29 +211,24 @@ const BaseballDiamond = ({ runners = [] }) => {
 
 /**
  * Game card component for the dashboard
- * 
+ *
  * @param {Object} props Component props
  * @param {Object} props.game Game data from the API
- * @param {Object} props.gameState Detailed game state data for any game (not just selected)
+ * @param {Object} props.gameState Detailed game state data from the store
  * @param {boolean} props.isSelected Whether this game is currently selected
  * @param {Function} props.onSelect Callback for when the game is clicked
- * @param {Array} props.events Game-specific events
- * @param {Function} props.onAcknowledgeEvent Callback to acknowledge events
  * @returns {JSX.Element} Game card component
  */
-const GameCard = ({ 
-  game, 
+const GameCard = ({
+  game,
   gameState,
-  isSelected = false, 
+  isSelected = false,
   onSelect = () => {},
-  events = [],
-  onAcknowledgeEvent = () => {}
 }) => {
   // Extract game data
   const {
-    gamePk, 
-    status, 
-    teams, 
+    status,
+    teams,
     linescore: baseLinescoreData,
     gameDate
   } = game;
@@ -273,18 +268,6 @@ const GameCard = ({
     baseLinescoreData?.offense?.second?.id !== undefined,
     baseLinescoreData?.offense?.third?.id !== undefined
   ];
-
-  // Handle event acknowledgment
-  React.useEffect(() => {
-    if (events && events.length > 0) {
-      // Auto-acknowledge events after a delay
-      const timer = setTimeout(() => {
-        events.forEach(event => onAcknowledgeEvent(event.id));
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [events, onAcknowledgeEvent]);
 
   // Card content
   const cardContent = (

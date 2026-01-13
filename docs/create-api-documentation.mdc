@@ -1,0 +1,125 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Rule: Generating API Documentation
+
+## Goal
+
+To guide an AI assistant in creating comprehensive API documentation in Markdown format, based on unstructured information about an API. The documentation should be clear, complete, and suitable for developers to understand and integrate with the API.
+
+## Process
+
+1. **Receive Initial Information:** The user provides unstructured information about an API (could be notes, code snippets, informal descriptions, etc.).
+2. **Ask Clarifying Questions:** Before writing the documentation, the AI *must* ask clarifying questions to gather sufficient detail about endpoints, authentication, request/response formats, and error handling.
+3. **Generate API Documentation:** Based on the initial information and the user's answers to the clarifying questions, generate API documentation using the structure outlined below.
+4. **Save Documentation:** Save the generated document as `api-[api-name].md` inside the `/docs` directory.
+
+## Clarifying Questions (Examples)
+
+The AI should adapt its questions based on the provided information, but here are key areas to explore:
+
+* **API Purpose:** "What is the primary purpose of this API? What problem does it solve?"
+* **Base URL:** "What is the base URL for this API? Are there different environments (dev, staging, prod)?"
+* **Authentication:** "What authentication method does this API use? (API key, OAuth, JWT, etc.)"
+* **Endpoints:** "Can you list all the available endpoints and their HTTP methods?"
+* **Request Format:** "What format should requests be in? (JSON, form-data, etc.)"
+* **Response Format:** "What format are responses returned in? Can you provide example responses?"
+* **Error Handling:** "How does the API handle errors? What error codes might be returned?"
+* **Rate Limiting:** "Are there any rate limits? If so, what are they?"
+* **Versioning:** "How is the API versioned? Are there multiple versions available?"
+* **Required Headers:** "Are there any required headers for requests?"
+* **Query Parameters:** "For GET endpoints, what query parameters are available?"
+* **Request Body:** "For POST/PUT/PATCH endpoints, what fields are required/optional in the request body?"
+
+## API Documentation Structure
+
+The generated documentation should include the following sections:
+
+1. **Overview:** Brief description of the API, its purpose, and main use cases.
+2. **Getting Started:** Quick start guide including base URL, authentication setup, and a simple example request.
+3. **Authentication:** Detailed explanation of how to authenticate with the API.
+4. **Base URL and Environments:** List all available environments and their base URLs.
+5. **Request Format:** General information about request headers, content types, and structure.
+6. **Response Format:** General information about response structure, status codes, and common fields.
+7. **Error Handling:** List of possible error codes, their meanings, and example error responses.
+8. **Rate Limiting:** Details about rate limits, headers that indicate limits, and how to handle rate limit errors.
+9. **Endpoints:** Detailed documentation for each endpoint including:
+   - HTTP method and path
+   - Description
+   - Authentication requirements
+   - Request parameters (path, query, body)
+   - Request example
+   - Response fields
+   - Response example
+   - Possible error responses
+10. **Code Examples:** Provide code examples in popular languages (curl, JavaScript, Python).
+11. **Changelog:** Note any recent changes or deprecations (if known).
+
+## Endpoint Documentation Template
+
+For each endpoint, use this format:
+
+```markdown
+### [HTTP Method] /path/to/endpoint
+
+**Description:** Brief description of what this endpoint does
+
+**Authentication:** Required/Optional - [Type]
+
+**Parameters:**
+
+| Name | Type | In | Required | Description |
+|------|------|-----|----------|-------------|
+| param1 | string | path | Yes | Description |
+| param2 | integer | query | No | Description |
+
+**Request Body:**
+```json
+{
+  "field1": "string",
+  "field2": 123
+}
+```
+
+**Response:**
+- **Status Code:** 200 OK
+- **Content Type:** application/json
+
+```json
+{
+  "id": "123",
+  "field1": "value",
+  "field2": 456
+}
+```
+
+**Error Responses:**
+- **400 Bad Request:** Invalid parameters
+- **401 Unauthorized:** Missing or invalid authentication
+- **404 Not Found:** Resource not found
+```
+
+## Target Audience
+
+Assume the primary readers are **developers integrating with the API**. Documentation should be:
+- Technical but clear
+- Include practical examples
+- Cover common use cases
+- Explain error scenarios
+- Provide troubleshooting guidance
+
+## Output
+
+* **Format:** Markdown (`.md`)
+* **Location:** `/docs/`
+* **Filename:** `api-[api-name].md`
+
+## Final Instructions
+
+1. Do NOT start implementing API clients or servers
+2. Make sure to ask the user clarifying questions to fill in any gaps
+3. Take the user's answers and create comprehensive, developer-friendly API documentation
+4. Include realistic examples that developers can copy and modify
+5. Ensure all endpoints are fully documented with request/response examples

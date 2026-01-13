@@ -1,196 +1,151 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Grid } from '@mui/material';
 
 // Import components
 import Header from '../components/Header';
 import GameList from '../pages/GameList';
-import MusicVisualizer from '../audio/components/MusicVisualizer';
 
-// Import hooks
-import useGameData from '../hooks/useGameData';
-import useBaseballAudio from '../hooks/useBaseballAudio';
+// Import store and hooks
+import { useGameStore } from '../store/gameStore';
+import { useGamePolling } from '../hooks/useGamePolling';
 
 /**
  * MainLayout component that handles game selection and data loading
+ * Refactored to use Zustand store for state management
  */
 const MainLayout = () => {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  
-  // State for selected game
-  const [selectedGameId, setSelectedGameId] = useState(null);
-  
-  // Reference for test game state
-  const testGameStateRef = useRef(null);
-  
-  // Set selected game from URL parameter
+
+  // Get store state and actions
+  const games = useGameStore((state) => state.games);
+  const rawGames = useGameStore((state) => state.rawGames);
+  const activeGameId = useGameStore((state) => state.activeGameId);
+  const setActiveGame = useGameStore((state) => state.setActiveGame);
+  const getGame = useGameStore((state) => state.getGame);
+
+  // Start polling for game data
+  useGamePolling({
+    interval: 5000, // 5 second refresh interval
+    enabled: true,
+  });
+
+  // Sync URL gameId with store's activeGameId
   useEffect(() => {
     if (gameId) {
-      setSelectedGameId(gameId);
+      setActiveGame(gameId);
     } else {
-      setSelectedGameId(null);
+      setActiveGame(null);
     }
-  }, [gameId]);
-  
-  // Get game data using our custom hook - use a consistent refresh interval for all data
-  const { 
-    games, 
-    getGameState,
-    gamesLoading, 
-    gamesError, 
-    gameEvents,
-    getGameEvents,
-    acknowledgeEvent
-  } = useGameData({
-    refreshInterval: 100 // Very fast refresh for near real-time updates
-  });
+  }, [gameId, setActiveGame]);
 
-  // Get the selected game state - handle both API and test games
-  const selectedGameState = selectedGameId ? 
-    (selectedGameId.startsWith('test-') ? testGameStateRef.current : getGameState(selectedGameId))
-    : null;
-  
-  // Get events for the selected game (test games don't have events yet)
-  const selectedGameEvents = (selectedGameId && !selectedGameId.startsWith('test-')) ? 
-    getGameEvents(selectedGameId) : [];
-  
-  // Initialize the baseball audio system
-  const { 
-    isActive, 
-    isAudioEnabled, 
-    isBaseballAudioInitialized,
-    initializeAudio 
-  } = useBaseballAudio({
-    gameId: selectedGameId,
-    gameState: selectedGameState,
-    gameEvents: selectedGameEvents
-  });
+  // Check if loading (no games yet)
+  const gamesLoading = rawGames.length === 0 && games.size === 0;
 
-  // Handler for registering a test game state
-  const registerTestGame = useCallback((testGameId, gameState) => {
-    // Store the test game state in our ref
-    testGameStateRef.current = gameState;
-  }, []);
-  
   // Handle game selection
-  const handleGameSelect = (id) => {
-    // Handle test games differently than real games
-    const isTestGame = id.startsWith('test-');
-    
-    if (!isTestGame) {
-      // For real games, find the game and check if it's in progress
-      const game = games.find(g => String(g.gamePk) === id);
-      
-      // Only allow selection of in-progress games
-      if (!game || game.status.abstractGameState !== 'Live') {
-        return;
-      }
+  const handleGameSelect = useCallback((id) => {
+    // Find the game in raw games to check status
+    const game = rawGames.find((g) => String(g.gamePk) === String(id));
+
+    // Only allow selection of in-progress games
+    if (!game || game.status?.abstractGameState !== 'Live') {
+      return;
     }
-    
-    if (selectedGameId === id) {
+
+    if (activeGameId === String(id)) {
       // Deselect if already selected
-      setSelectedGameId(null);
+      setActiveGame(null);
       navigate('/', { replace: true });
     } else {
       // Select new game
-      setSelectedGameId(id);
-      
-      // For test games, don't modify the URL to avoid route issues
-      if (!isTestGame) {
-        navigate(`/${id}`, { replace: true });
-      }
-      
-      // Always initialize audio when selecting a game
-      initializeAudio();
+      setActiveGame(id);
+      navigate(`/${id}`, { replace: true });
     }
-  };
-  
+  }, [activeGameId, rawGames, setActiveGame, navigate]);
+
   // Check if selected game is still in progress
   useEffect(() => {
-    // Skip check for test games
-    if (selectedGameId && !selectedGameId.startsWith('test-') && games.length > 0) {
-      const selectedGame = games.find(g => String(g.gamePk) === selectedGameId);
-      if (!selectedGame || selectedGame.status.abstractGameState !== 'Live') {
+    if (activeGameId && rawGames.length > 0) {
+      const selectedGame = rawGames.find(
+        (g) => String(g.gamePk) === activeGameId
+      );
+      if (!selectedGame || selectedGame.status?.abstractGameState !== 'Live') {
         // Clear selection if game is no longer in progress
-        setSelectedGameId(null);
+        setActiveGame(null);
         navigate('/', { replace: true });
       }
     }
-  }, [games, selectedGameId, navigate]);
+  }, [rawGames, activeGameId, setActiveGame, navigate]);
 
   // Navigate to dashboard
-  const goToDashboard = () => {
-    setSelectedGameId(null);
+  const goToDashboard = useCallback(() => {
+    setActiveGame(null);
     navigate('/');
-  };
-  
+  }, [setActiveGame, navigate]);
+
   // Handle click on container to deselect game
-  const handleContainerClick = useCallback((e) => {
-    // Only proceed if a game is selected
-    if (!selectedGameId) return;
-    
-    // Check if click was on a game card
-    const closestCard = e.target.closest('.MuiCard-root');
-    const closestGameHeader = e.target.closest('h1');
-    
-    // If click was not on a card or the header (to avoid conflicting with navigation), deselect the game
-    if (!closestCard && !closestGameHeader) {
-      setSelectedGameId(null);
-      navigate('/', { replace: true });
-    }
-  }, [selectedGameId, navigate]);
+  const handleContainerClick = useCallback(
+    (e) => {
+      // Only proceed if a game is selected
+      if (!activeGameId) return;
+
+      // Check if click was on a game card
+      const closestCard = e.target.closest('.MuiCard-root');
+      const closestGameHeader = e.target.closest('h1');
+
+      // If click was not on a card or the header, deselect the game
+      if (!closestCard && !closestGameHeader) {
+        setActiveGame(null);
+        navigate('/', { replace: true });
+      }
+    },
+    [activeGameId, setActiveGame, navigate]
+  );
+
+  // Helper to get game state for a specific game
+  const getGameStateForCard = useCallback(
+    (gamePk) => {
+      return getGame(String(gamePk));
+    },
+    [getGame]
+  );
 
   return (
-    <Container 
-      maxWidth="xl" 
-      sx={{ 
-        mt: 6, 
+    <Container
+      maxWidth="xl"
+      sx={{
+        mt: 6,
         mb: 5,
         '@media (min-width: 768px) and (max-width: 1199px)': {
-          maxWidth: '90%'
+          maxWidth: '90%',
         },
         '@media (min-width: 1200px)': {
-          maxWidth: '80%'
+          maxWidth: '80%',
         },
-        px: { xs: 4, sm: 5 }, // Increased padding for mobile and tablet
-        cursor: 'default' // Ensure default cursor throughout container
+        px: { xs: 4, sm: 5 },
+        cursor: 'default',
       }}
       onClick={handleContainerClick}
     >
       {/* Header */}
-      <Header 
-        onTitleClick={goToDashboard}
-        showAudioControls={!!selectedGameId}
-      />
+      <Header onTitleClick={goToDashboard} activeGameId={activeGameId} />
 
       <Grid container spacing={3}>
-        {/* Main content - always keep full width for consistent card sizes */}
+        {/* Main content */}
         <Grid item xs={12}>
           {/* Games List */}
-          <GameList 
-            games={games}
-            getGameState={getGameState}
+          <GameList
+            games={rawGames}
+            getGameState={getGameStateForCard}
             gamesLoading={gamesLoading}
-            gamesError={gamesError}
-            selectedGameId={selectedGameId}
+            gamesError={null}
+            selectedGameId={activeGameId}
             onGameSelect={handleGameSelect}
-            getGameEvents={getGameEvents}
-            acknowledgeEvent={acknowledgeEvent}
-            registerTestGame={registerTestGame}
+            getGameEvents={() => []}
+            acknowledgeEvent={() => {}}
           />
         </Grid>
-
-        {/* Music visualizer when a game is selected */}
-        {selectedGameId && isAudioEnabled && (
-          <Grid item xs={12} sx={{ mt: 3 }}>
-            <MusicVisualizer 
-              gameId={selectedGameId}
-              gameEvents={selectedGameEvents}
-              gameState={selectedGameState}
-            />
-          </Grid>
-        )}
       </Grid>
     </Container>
   );

@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@elemaudio/core": "^4.0.1",
+    "@elemaudio/web-renderer": "^4.0.3",
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
     "@fontsource/bebas-neue": "^5.2.5",
@@ -16,7 +18,8 @@
     "react-router-dom": "^6.21.1",
     "react-scripts": "5.0.1",
     "tone": "^15.0.4",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
