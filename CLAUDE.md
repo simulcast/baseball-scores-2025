@@ -19,7 +19,9 @@ Baseball Scores transforms live MLB games into generative ambient music. The app
 ```
 MLB StatsAPI → Netlify Functions (1s cache) → useGamePolling → Zustand Store → React Components
                                                                     ↓
-                                                              Audio Engine (stub)
+                                                              Audio Engine
+                                                                    ↓
+                                                          Interpreter → Layers → WebRenderer
 ```
 
 ### Key Directories
@@ -29,7 +31,7 @@ MLB StatsAPI → Netlify Functions (1s cache) → useGamePolling → Zustand Sto
 - `src/utils/` - Normalization utilities for MLB API data
 - `src/hooks/` - `useGamePolling` for data fetching
 - `src/pages/` - Page components including Playground
-- `src/audio/` - Audio engine (currently a stub, Elementary Audio integration planned)
+- `src/audio/` - Elementary Audio engine with synthesis layers and effects
 - `netlify/functions/` - Serverless MLB API proxy with caching
 
 ### State Management (Zustand)
@@ -68,14 +70,55 @@ The playground (`/playground`) provides a testing environment for game state and
 - Manipulate game state without needing live API data
 - Debug panel shows state changes and raw game state
 
-### Audio Architecture (In Progress)
+### Audio Architecture (Elementary Audio)
 
-**Current state:** Audio engine is stubbed out (`src/audio/index.js`)
+The audio engine uses Elementary Audio for declarative DSP synthesis. It transforms game state into generative ambient music.
 
-**Planned integration:**
-- Audio engine subscribes to Zustand store changes
-- `lastChange` field provides diff for triggering sounds
-- Elementary Audio will replace previous Tone.js implementation
+**Public API (`src/audio/index.js`):**
+- `connect(store)` - Initialize engine and subscribe to Zustand store
+- `disconnect()` - Cleanup engine and subscriptions
+- `pause()` / `resume()` - Playback control
+- `setMasterVolume(0-1)` - Volume control
+- `isConnected()` - Check playback status
+
+**Directory structure:**
+```
+src/audio/
+├── index.js         # Public API
+├── engine.js        # AudioEngine class (singleton)
+├── interpreter.js   # Game state → musical parameters
+├── harmony.js       # Scales, chords, tonality logic
+├── euclidean.js     # Bjorklund's algorithm for density curves
+├── events.js        # Game event detection
+├── voices.js        # Voice allocation/stealing
+├── constants.js     # All configuration values
+├── layers/          # Synthesis layers
+│   ├── drone.js     # Layered sine waves (fundamental + sub + fifth)
+│   ├── pad.js       # Detuned saw waves
+│   ├── bells.js     # FM synthesis bells
+│   ├── air.js       # Filtered noise
+│   ├── shimmer.js   # Ring modulation shimmer
+│   └── ghostMelody.js # Sine + vibrato melody
+└── effects/         # Audio effects
+    ├── filter.js    # Lowpass, highpass, bandpass
+    ├── eq.js        # Parametric EQ
+    ├── dynamics.js  # Soft clip, limiter, compression
+    └── reverb.js    # Schroeder-style reverb
+```
+
+**Game state to music mapping:**
+- Score differential → Mode (major if home leading, minor if away, mixolydian if tied)
+- Inning → Tonal center (cycles through I, IV, V, vi progression)
+- Tension (outs, runners, count, inning, score diff) → Layer amplitudes and effects
+- Euclidean density curves → Probability-based bell and melody triggers
+
+**Synthesis layers (6 total):**
+1. **Drone** - Sub-bass foundation, always present
+2. **Pad** - Harmonic bed, responds to chord changes
+3. **Bells** - FM bells, triggered by Euclidean probability
+4. **Air** - Filtered noise texture
+5. **Shimmer** - Octave-up ring modulation of pad
+6. **Ghost Melody** - Sparse melodic fragments
 
 ## Code Style
 
@@ -87,8 +130,9 @@ The playground (`/playground`) provides a testing environment for game state and
 
 ## Active Development
 
-Branch `elementary-rewrite` has completed the state management refactor:
+Branch `elementary-rewrite` has completed major refactoring:
 - Migrated from custom hooks to Zustand store
 - Added playground for testing
 - Removed old Tone.js audio code (bundle reduced by ~100KB)
-- Next: Implement Elementary Audio engine integration
+- Implemented Elementary Audio engine with 6 synthesis layers
+- Next: Wire up audio engine to UI and test with live games
