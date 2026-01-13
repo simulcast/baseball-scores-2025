@@ -211,20 +211,25 @@ const BaseballDiamond = ({ runners = [] }) => {
 
 /**
  * Game card component for the dashboard
- * 
+ *
  * @param {Object} props Component props
- * @param {Object} props.game Game data
+ * @param {Object} props.game Game data from the API
+ * @param {Object} props.gameState Detailed game state data from the store
  * @param {boolean} props.isSelected Whether this game is currently selected
  * @param {Function} props.onSelect Callback for when the game is clicked
  * @returns {JSX.Element} Game card component
  */
-const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
+const GameCard = ({
+  game,
+  gameState,
+  isSelected = false,
+  onSelect = () => {},
+}) => {
   // Extract game data
   const {
-    gamePk, 
-    status, 
-    teams, 
-    linescore,
+    status,
+    teams,
+    linescore: baseLinescoreData,
     gameDate
   } = game;
 
@@ -235,25 +240,33 @@ const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
   // Format game time
   const gameTime = gameDate ? format(new Date(gameDate), 'h:mm a', { timeZone: 'local' }) : '';
 
-  // Get current inning if in progress
-  const inningInfo = linescore?.currentInning 
-    ? `${linescore.inningState} ${linescore.currentInning}` 
-    : '';
-
-  // Get score for teams
-  const awayScore = teams.away.score !== undefined ? teams.away.score : 0;
-  const homeScore = teams.home.score !== undefined ? teams.home.score : 0;
-
-  // Get count data if available
-  const balls = linescore?.balls || 0;
-  const strikes = linescore?.strikes || 0;
-  const outs = linescore?.outs || 0;
+  // Use gameState data if available (should be available for all live games)
+  // Fall back to basic linescore data if needed
   
-  // Get runners on base
-  const runnersOnBase = [
-    linescore?.offense?.first?.id !== undefined,
-    linescore?.offense?.second?.id !== undefined,
-    linescore?.offense?.third?.id !== undefined
+  // Get current inning - respect special inning states like "Mid" and "End"
+  const inningInfo = gameState ? 
+    (gameState.inningState && 
+     (gameState.inningState.startsWith('Mid') || gameState.inningState.startsWith('End')) ? 
+      `${gameState.inningState} ${gameState.inning}` : 
+      `${gameState.isTopInning ? 'Top' : 'Bottom'} ${gameState.inning}`) : 
+    (baseLinescoreData?.currentInning ? 
+      `${baseLinescoreData.inningState} ${baseLinescoreData.currentInning}` : 
+      '');
+
+  // Get scores
+  const homeScore = gameState ? gameState.homeScore : (teams.home.score || 0);
+  const awayScore = gameState ? gameState.awayScore : (teams.away.score || 0);
+
+  // Get counts
+  const balls = gameState ? gameState.balls : (baseLinescoreData?.balls || 0);
+  const strikes = gameState ? gameState.strikes : (baseLinescoreData?.strikes || 0);
+  const outs = gameState ? gameState.outs : (baseLinescoreData?.outs || 0);
+  
+  // Get runners
+  const runnersOnBase = gameState ? gameState.runners : [
+    baseLinescoreData?.offense?.first?.id !== undefined,
+    baseLinescoreData?.offense?.second?.id !== undefined,
+    baseLinescoreData?.offense?.third?.id !== undefined
   ];
 
   // Card content
@@ -311,6 +324,8 @@ const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
   if (isSelected) {
     finalStyles = { ...finalStyles, ...cardStyles.selected };
   }
+  
+  // No pulsing animation for events
 
   // Render card
   return (

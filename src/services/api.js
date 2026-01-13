@@ -20,7 +20,10 @@ export const getTodaysGames = async (date) => {
     const timezoneOffset = -new Date().getTimezoneOffset();
     const params = date ? { date, timezoneOffset } : { timezoneOffset };
     const response = await apiClient.get('/getGames', { params });
-    return response.data.games;
+
+    const games = response.data.games || [];
+
+    return games;
   } catch (error) {
     console.error('Error fetching today\'s games:', error);
     throw error;
@@ -30,6 +33,7 @@ export const getTodaysGames = async (date) => {
 /**
  * Get detailed game state
  * @param {number} gamePk Game ID
+ * @param {boolean} includeActiveGames If true, returns basic state for all active games
  * @returns {Promise<Object>} Game state
  */
 export const getGameState = async (gamePk) => {
@@ -40,9 +44,32 @@ export const getGameState = async (gamePk) => {
     const response = await apiClient.get('/getGameDetails', { 
       params: { gamePk: numericGamePk } 
     });
+    
     return response.data.gameState;
   } catch (error) {
     console.error(`Error fetching game state for game ${gamePk}:`, error);
     throw error;
+  }
+};
+
+/**
+ * Get detailed state for multiple games simultaneously
+ * @param {Array} gamePkArray Array of game IDs to fetch details for
+ * @returns {Promise<Object>} Object mapping game IDs to game states
+ */
+export const getMultipleGameStates = async (gamePkArray) => {
+  try {
+    // Only process live games
+    const liveGameIds = gamePkArray.filter(id => id !== null && id !== undefined);
+    if (liveGameIds.length === 0) return {};
+    
+    const response = await apiClient.get('/getMultipleGameDetails', { 
+      params: { gamePks: liveGameIds.join(',') } 
+    });
+    
+    return response.data.gameStates || {};
+  } catch (error) {
+    console.error(`Error fetching multiple game states:`, error);
+    return {};
   }
 };

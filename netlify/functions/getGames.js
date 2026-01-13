@@ -6,8 +6,9 @@ let gamesCache = {
   timestamp: null
 };
 
-// Cache expiration time in milliseconds (30 seconds)
-const CACHE_EXPIRATION = 30 * 1000;
+// Cache expiration time in milliseconds
+// Use a very short cache for near real-time updates
+const CACHE_EXPIRATION = 1 * 1000; // 1 second
 
 exports.handler = async (event) => {
   try {
@@ -22,7 +23,7 @@ exports.handler = async (event) => {
         statusCode: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=30'
+          'Cache-Control': 'public, max-age=5'
         },
         body: JSON.stringify({
           games: gamesCache.data,
@@ -50,7 +51,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=30'
+        'Cache-Control': 'public, max-age=1'
       },
       body: JSON.stringify({
         games,

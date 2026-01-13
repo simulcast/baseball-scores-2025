@@ -1,0 +1,170 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Rule: Generating Library Documentation for Junior Developers
+
+## Goal
+
+To guide an AI assistant in creating comprehensive library documentation in Markdown format, based on a provided codebase. The documentation should be clear, beginner-friendly, and enable junior developers to understand and integrate the library into their projects with confidence.
+
+## Process
+
+1. **Receive Codebase:** The user provides a codebase (could be files, repository link, code snippets, etc.).
+2. **Analyze and Ask Clarifying Questions:** Before writing documentation, the AI *must* analyze the code and ask clarifying questions about purpose, dependencies, common use cases, and any non-obvious functionality.
+3. **Generate Library Documentation:** Based on the codebase analysis and the user's answers, generate documentation using the structure outlined below.
+4. **Save Documentation:** Save the generated document as `[library-name]-documentation.md` inside the `/docs` directory.
+
+## Clarifying Questions (Examples)
+
+The AI should adapt its questions based on the codebase analysis, but here are key areas to explore:
+
+* **Library Purpose:** "What is the main problem this library solves? What would a developer use it for?"
+* **Target Projects:** "What types of projects would typically use this library?"
+* **Dependencies:** "Are there any external dependencies that users need to be aware of?"
+* **Platform Requirements:** "Are there specific OS, runtime, or version requirements?"
+* **Common Use Cases:** "What are the 3-5 most common ways developers use this library?"
+* **Key Features:** "What features should be highlighted for new users?"
+* **Gotchas:** "Are there any common mistakes or non-obvious behaviors users should know about?"
+* **Related Libraries:** "How does this compare to similar libraries? When would someone choose this?"
+* **Maintenance Status:** "Is this actively maintained? How often is it updated?"
+* **License:** "What license is this under? Are there any usage restrictions?"
+
+## Library Documentation Structure
+
+The generated documentation should include the following sections:
+
+1. **Overview:** 
+   - One-paragraph summary explaining what the library does
+   - Key benefits and when to use it
+   - Simple "before and after" example showing the problem it solves
+
+2. **Quick Start:**
+   - Installation instructions (package manager commands)
+   - Minimal working example (10-20 lines max)
+   - Expected output/result
+
+3. **Installation & Setup:**
+   - Detailed installation for different environments
+   - Configuration options
+   - Troubleshooting common installation issues
+
+4. **Core Concepts:**
+   - Explain fundamental concepts/terminology
+   - Visual diagrams if helpful
+   - Analogies to help junior developers understand
+
+5. **Basic Usage:**
+   - Step-by-step walkthrough of common tasks
+   - Code examples with detailed comments
+   - What each part does and why
+
+6. **API Reference:**
+   - Organized by feature/module
+   - Each function/class with:
+     - Purpose (one sentence)
+     - Parameters with types and descriptions
+     - Return value
+     - Simple example
+     - Common mistakes to avoid
+
+7. **Examples & Recipes:**
+   - Complete, runnable examples for common scenarios
+   - Progressively complex examples
+   - Real-world use cases
+
+8. **Best Practices:**
+   - Do's and don'ts
+   - Performance considerations
+   - Security considerations (if applicable)
+
+9. **Troubleshooting:**
+   - Common errors and solutions
+   - Debug tips
+   - FAQ section
+
+10. **Advanced Topics:** (clearly marked as optional)
+    - Advanced features
+    - Customization options
+    - Integration with other tools
+
+## Function/Method Documentation Template
+
+For each public function or method, use this format:
+
+```markdown
+### functionName(param1, param2)
+
+**What it does:** One-sentence description in plain English
+
+**When to use it:** Brief explanation of use cases
+
+**Parameters:**
+- `param1` (type): What this parameter controls
+- `param2` (type, optional): What this parameter controls. Default: `defaultValue`
+
+**Returns:** `type` - What the return value represents
+
+**Example:**
+```javascript
+// Example showing common usage
+const result = functionName("hello", 123);
+console.log(result); // Output: "hello-123"
+```
+
+**Common Mistakes:**
+- ❌ Don't pass null for param1 (will throw error)
+- ✅ Do validate param2 is positive if using for array indexing
+
+**See Also:** relatedFunction1(), relatedFunction2()
+```
+
+## Junior Developer Considerations
+
+Make the documentation accessible by:
+
+1. **Use Simple Language:**
+   - Avoid jargon without explanation
+   - Define technical terms when first used
+   - Use analogies to familiar concepts
+
+2. **Show, Don't Just Tell:**
+   - Every concept needs a code example
+   - Include expected output/results
+   - Explain what's happening step-by-step
+
+3. **Progressive Complexity:**
+   - Start with the simplest use case
+   - Build up to more complex scenarios
+   - Clearly mark advanced sections
+
+4. **Visual Aids:**
+   - Use diagrams for architecture/flow
+   - Include screenshots for UI components
+   - Use tables for comparing options
+
+5. **Anticipate Questions:**
+   - "Why would I use this instead of [alternative]?"
+   - "What happens if I forget to do X?"
+   - "How do I know if it's working?"
+
+## Output
+
+* **Format:** Markdown (`.md`)
+* **Location:** `/docs/`
+* **Filename:** `[library-name]-documentation.md`
+* **Additional Files:** 
+  - `examples/` directory with runnable example files
+  - `quickstart.md` with just the essential getting-started info
+
+## Final Instructions
+
+1. Analyze the entire codebase to understand structure and relationships
+2. Ask clarifying questions to fill knowledge gaps
+3. Write as if explaining to a developer with 6-12 months of experience
+4. Include plenty of runnable examples that can be copy-pasted
+5. Test all code examples for accuracy
+6. Organize information from most common/simple to advanced
+7. Make it easy to find information quickly (good headers, table of contents)
+8. Include a "Next Steps" section pointing to resources for learning more

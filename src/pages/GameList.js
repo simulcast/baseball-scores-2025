@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
-  Grid, 
-  Box, 
+import {
+  Grid,
+  Box,
   CircularProgress,
-  Alert
+  Alert,
 } from '@mui/material';
 
 // Import components
@@ -12,12 +12,13 @@ import GameCard from '../components/GameCard';
 /**
  * GameList component that shows all games
  */
-const GameList = ({ 
-  games, 
-  gamesLoading, 
-  gamesError, 
-  selectedGameId, 
-  onGameSelect
+const GameList = ({
+  games,
+  getGameState,
+  gamesLoading,
+  gamesError,
+  selectedGameId,
+  onGameSelect,
 }) => {
   return (
     <>
@@ -38,22 +39,28 @@ const GameList = ({
       {/* Games grid */}
       <Grid container spacing={3}>
         {/* Active games */}
-        {games.filter(game => game.status.abstractGameState === 'Live').length > 0 && (
+        {games.filter((game) => game.status.abstractGameState === 'Live').length > 0 && (
           <>
             {games
-              .filter(game => game.status.abstractGameState === 'Live')
-              .map(game => (
-                <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
-                  <GameCard 
-                    game={game} 
-                    isSelected={String(game.gamePk) === selectedGameId}
-                    onSelect={() => onGameSelect(String(game.gamePk))}
-                  />
-                </Grid>
-              ))
-            }
-            {(games.filter(game => game.status.abstractGameState === 'Final').length > 0 || 
-              games.filter(game => game.status.abstractGameState === 'Preview').length > 0) && (
+              .filter((game) => game.status.abstractGameState === 'Live')
+              .map((game) => {
+                const gameId = String(game.gamePk);
+                const isSelected = gameId === selectedGameId;
+                const gameState = getGameState(gameId);
+
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
+                    <GameCard
+                      game={game}
+                      gameState={gameState}
+                      isSelected={isSelected}
+                      onSelect={() => onGameSelect(gameId)}
+                    />
+                  </Grid>
+                );
+              })}
+            {(games.filter((game) => game.status.abstractGameState === 'Final').length > 0 ||
+              games.filter((game) => game.status.abstractGameState === 'Preview').length > 0) && (
               <Grid item xs={12}>
                 <Box sx={{ my: 4, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }} />
               </Grid>
@@ -62,20 +69,16 @@ const GameList = ({
         )}
 
         {/* Final games */}
-        {games.filter(game => game.status.abstractGameState === 'Final').length > 0 && (
+        {games.filter((game) => game.status.abstractGameState === 'Final').length > 0 && (
           <>
             {games
-              .filter(game => game.status.abstractGameState === 'Final')
-              .map(game => (
+              .filter((game) => game.status.abstractGameState === 'Final')
+              .map((game) => (
                 <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
-                  <GameCard 
-                    game={game} 
-                    isSelected={false}
-                  />
+                  <GameCard game={game} isSelected={false} />
                 </Grid>
-              ))
-            }
-            {games.filter(game => game.status.abstractGameState === 'Preview').length > 0 && (
+              ))}
+            {games.filter((game) => game.status.abstractGameState === 'Preview').length > 0 && (
               <Grid item xs={12}>
                 <Box sx={{ my: 4, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }} />
               </Grid>
@@ -84,28 +87,22 @@ const GameList = ({
         )}
 
         {/* Upcoming games */}
-        {games.filter(game => game.status.abstractGameState === 'Preview').length > 0 && (
+        {games.filter((game) => game.status.abstractGameState === 'Preview').length > 0 && (
           <>
             {games
-              .filter(game => game.status.abstractGameState === 'Preview')
-              .map(game => (
+              .filter((game) => game.status.abstractGameState === 'Preview')
+              .map((game) => (
                 <Grid item xs={12} sm={6} md={4} key={game.gamePk}>
-                  <GameCard 
-                    game={game} 
-                    isSelected={false}
-                  />
+                  <GameCard game={game} isSelected={false} />
                 </Grid>
-              ))
-            }
+              ))}
           </>
         )}
 
         {/* No games message */}
         {!gamesLoading && games.length === 0 && (
           <Grid item xs={12}>
-            <Alert severity="info">
-              No games scheduled for today
-            </Alert>
+            <Alert severity="info">No games scheduled for today</Alert>
           </Grid>
         )}
       </Grid>
@@ -113,4 +110,4 @@ const GameList = ({
   );
 };
 
-export default GameList; 
+export default GameList;
