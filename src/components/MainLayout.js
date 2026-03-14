@@ -7,6 +7,7 @@ import GameList from './GameList';
 
 import { useGameStore } from '../store/gameStore';
 import { useGamePolling } from '../hooks/useGamePolling';
+import { useLiveGamePolling } from '../hooks/useLiveGamePolling';
 import * as audio from '../audio';
 
 const MainLayout = ({ gameId }) => {
@@ -16,7 +17,8 @@ const MainLayout = ({ gameId }) => {
   const activeGameId = useGameStore((s) => s.activeGameId);
   const setActiveGame = useGameStore((s) => s.setActiveGame);
 
-  useGamePolling({ interval: 1000 });
+  useGamePolling({ interval: 10000 });
+  useLiveGamePolling(activeGameId, { interval: 1000 });
 
   // Audio engine is a page-level singleton — survives component remounts (HMR, Strict Mode).
   // Cleanup happens on page unload, not component unmount.
