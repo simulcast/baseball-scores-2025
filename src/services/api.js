@@ -9,3 +9,11 @@ export async function fetchGames(date) {
   const data = await response.json();
   return data.games ?? [];
 }
+
+export async function fetchGameLive(gamePk) {
+  const response = await fetch(`/api/getGameLive?gamePk=${gamePk}`);
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+  const data = await response.json();
+  return data.game ?? null;
+}

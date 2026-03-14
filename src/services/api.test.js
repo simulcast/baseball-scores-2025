@@ -1,4 +1,4 @@
-import { fetchGames } from './api';
+import { fetchGames, fetchGameLive } from './api';
 
 const mockFetch = (body, ok = true, status = 200) => {
   global.fetch = jest.fn().mockResolvedValue({
@@ -50,5 +50,37 @@ describe('fetchGames', () => {
 
     const url = global.fetch.mock.calls[0][0];
     expect(url).toContain('timezoneOffset=');
+  });
+});
+
+describe('fetchGameLive', () => {
+  it('returns game object on success', async () => {
+    const game = { gameData: { game: { pk: 718405 } } };
+    mockFetch({ game });
+
+    const result = await fetchGameLive(718405);
+    expect(result).toEqual(game);
+  });
+
+  it('returns null when response has no game field', async () => {
+    mockFetch({});
+
+    const result = await fetchGameLive(718405);
+    expect(result).toBeNull();
+  });
+
+  it('throws on non-200 response', async () => {
+    mockFetch({}, false, 500);
+
+    await expect(fetchGameLive(718405)).rejects.toThrow('API error: 500');
+  });
+
+  it('passes gamePk in query string', async () => {
+    mockFetch({ game: null });
+
+    await fetchGameLive(718405);
+
+    const url = global.fetch.mock.calls[0][0];
+    expect(url).toContain('gamePk=718405');
   });
 });
