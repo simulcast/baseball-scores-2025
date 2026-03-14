@@ -24,7 +24,10 @@ const cardStyles = {
   },
   live: {
     cursor: 'pointer',
-    transition: 'all 0.3s ease',
+    transition: 'filter 0.3s ease, opacity 0.3s ease',
+    '@media (max-width: 600px)': {
+      transition: 'box-shadow 0.3s ease, opacity 0.3s ease',
+    },
     '&:hover': {
       borderColor: 'white',
       filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.45))',
