@@ -52,8 +52,16 @@ const theme = createTheme({
           background: 'linear-gradient(145deg, #2d5a27, #1d3a19)',
           filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.3))',
           transition: 'all 0.3s ease',
+          '@media (max-width: 600px)': {
+            filter: 'none',
+            boxShadow: '15px 10px 5px rgba(255, 255, 255, 0.3)',
+          },
           '&:not(.static-card):hover': {
             filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.6))',
+            '@media (max-width: 600px)': {
+              filter: 'none',
+              boxShadow: '15px 10px 5px rgba(255, 255, 255, 0.6)',
+            },
           },
         },
       },
