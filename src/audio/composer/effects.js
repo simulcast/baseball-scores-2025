@@ -3,11 +3,13 @@
  * All layers route through this bus before reaching the master gain.
  *
  * Signal flow:
- *   voices → bus → saturation → tapeFilter (LP 4.8kHz) → Reverb → Compressor → output
+ *   voices → bus → saturation → tapeFilter (LP 4.8kHz) → Reverb → Compressor → makeupGain (+4dB) → Limiter (-1dB) → output
  *   voices → delaySend → PingPongDelay → bus
  *
  * Saturation adds even harmonics (tape warmth).
  * Lowpass filter simulates analog high-frequency rolloff.
+ * Makeup gain restores loudness after compression.
+ * Limiter provides brickwall ceiling for phone/Bluetooth headroom.
  */
 import * as Tone from 'tone';
 
@@ -36,13 +38,19 @@ export class EffectsChain {
       preDelay: 0.12,
     });
 
-    // Compressor: gentle glue, not squash
+    // Compressor: tighter glue — catches reverb tail buildup and EventVoice transients
     this.compressor = new Tone.Compressor({
-      threshold: -15,
-      ratio: 2,
-      attack: 0.2,
-      release: 0.4,
+      threshold: -18,
+      ratio: 3,
+      attack: 0.03,
+      release: 0.25,
     });
+
+    // Makeup gain: restore loudness lost from tighter compression (+4dB)
+    this.makeupGain = new Tone.Gain(1.58);
+
+    // Limiter: brickwall ceiling at -1dB (intersample peak margin for phone DACs/Bluetooth)
+    this.limiter = new Tone.Limiter(-1);
 
     // Delay send: parallel delay for shimmer
     this.delaySend = new Tone.Gain(0);
@@ -52,12 +60,14 @@ export class EffectsChain {
       wet: 1,
     });
 
-    // Wire: bus → saturation → tapeFilter → reverb → compressor → output
+    // Wire: bus → saturation → tapeFilter → reverb → compressor → makeupGain → limiter → output
     this.bus.connect(this.saturation);
     this.saturation.connect(this.tapeFilter);
     this.tapeFilter.connect(this.reverb);
     this.reverb.connect(this.compressor);
-    this.compressor.connect(output);
+    this.compressor.connect(this.makeupGain);
+    this.makeupGain.connect(this.limiter);
+    this.limiter.connect(output);
 
     // Wire: delaySend → delay → bus (parallel send)
     this.delaySend.connect(this.delay);
@@ -72,6 +82,8 @@ export class EffectsChain {
   dispose() {
     this.delay?.dispose();
     this.delaySend?.dispose();
+    this.limiter?.dispose();
+    this.makeupGain?.dispose();
     this.compressor?.dispose();
     this.reverb?.dispose();
     this.tapeFilter?.dispose();
@@ -79,6 +91,8 @@ export class EffectsChain {
     this.bus?.dispose();
     this.delay = null;
     this.delaySend = null;
+    this.limiter = null;
+    this.makeupGain = null;
     this.compressor = null;
     this.reverb = null;
     this.tapeFilter = null;

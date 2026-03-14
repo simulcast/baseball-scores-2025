@@ -1,11 +1,12 @@
 /**
  * BreathLayer: ambient texture — breath, tape hiss, and vinyl crackle.
  *
- * Three sub-voices:
+ * Four sub-voices:
  * 1. Breath: filtered pink noise with slow LFO (the "breathing" pad)
  * 2. Tape hiss: high-passed pink noise (constant, very quiet)
- * 3. Vinyl crackle: white noise bursts through a narrow bandpass,
- *    triggered at random intervals (2-6s) with random amplitude
+ * 3. Vinyl surface: continuous quiet white noise through bandpass (the "room tone" of a record)
+ * 4. Vinyl crackle: dense micro-impulses via fast Tone.Loop — mostly tiny
+ *    surface ticks with occasional louder pops. ~10-15 events/sec.
  *
  * Together these create the "analog playback" texture that tells the
  * listener's brain this isn't a digital source.
@@ -16,18 +17,19 @@ import * as Tone from 'tone';
 
 const BREATH_VOLUME = 0.055;
 const HISS_VOLUME = 0.02;
-const CRACKLE_VOLUME = 0.035;
+const SURFACE_VOLUME = 0.012;
+const CRACKLE_VOLUME = 0.04;
 const LFO_MIN_FREQ = 0.08;
 const LFO_MAX_FREQ = 0.125;
-const CRACKLE_MIN_INTERVAL = 2000; // ms
-const CRACKLE_MAX_INTERVAL = 6000;
+const CRACKLE_TICK_INTERVAL = 0.04; // 25 ticks/sec
+const CRACKLE_FIRE_PROBABILITY = 0.45; // ~11 crackles/sec average
+const CRACKLE_POP_PROBABILITY = 0.1; // 10% of crackles are louder pops
 
 export class BreathLayer {
   constructor(output) {
     this.output = output;
     this.suspended = false;
     this.disposed = false;
-    this._crackleTimer = null;
 
     // --- Voice 1: Breath (filtered pink noise with slow LFO) ---
     this.breathNoise = new Tone.Noise('pink');
@@ -69,25 +71,53 @@ export class BreathLayer {
 
     this.hissNoise.start();
 
-    // --- Voice 3: Vinyl crackle (random white noise bursts) ---
-    this.crackleNoise = new Tone.Noise('white');
-    this.crackleNoise.volume.value = -20;
+    // --- Voice 3: Vinyl surface noise (continuous filtered white noise) ---
+    // The quiet "rolling" texture between crackle events — gives the
+    // impression of a needle sitting in the groove at all times.
+    this.surfaceNoise = new Tone.Noise('white');
+    this.surfaceNoise.volume.value = -32;
 
-    // Narrow bandpass centered at 4kHz — the "tick" frequency of dust
-    this.crackleFilter = new Tone.Filter({
-      frequency: 4000,
+    this.surfaceFilter = new Tone.Filter({
+      frequency: 1800,
       type: 'bandpass',
-      Q: 3,
+      Q: 0.8,
     });
 
-    this.crackleGain = new Tone.Gain(0); // silent by default, bursts on
+    this.surfaceGain = new Tone.Gain(SURFACE_VOLUME);
+
+    this.surfaceNoise.connect(this.surfaceFilter);
+    this.surfaceFilter.connect(this.surfaceGain);
+    this.surfaceGain.connect(output);
+
+    this.surfaceNoise.start();
+
+    // --- Voice 4: Vinyl crackle (dense micro-impulse loop) ---
+    // Real vinyl crackle = many short broadband impulses per second.
+    // Amplitude distribution: mostly tiny surface ticks, occasional louder pops.
+    this.crackleNoise = new Tone.Noise('white');
+    this.crackleNoise.volume.value = -18;
+
+    // Wider bandpass than before (Q 1.2 vs 3) centered lower (2.5kHz vs 4kHz)
+    // — real dust impulses are broadband, not narrowly resonant
+    this.crackleFilter = new Tone.Filter({
+      frequency: 2500,
+      type: 'bandpass',
+      Q: 1.2,
+    });
+
+    this.crackleGain = new Tone.Gain(0); // silent between bursts
 
     this.crackleNoise.connect(this.crackleFilter);
     this.crackleFilter.connect(this.crackleGain);
     this.crackleGain.connect(output);
 
     this.crackleNoise.start();
-    this._scheduleCrackle();
+
+    // Fast loop fires micro-bursts probabilistically
+    this.crackleLoop = new Tone.Loop((time) => {
+      this._tickCrackle(time);
+    }, CRACKLE_TICK_INTERVAL);
+    this.crackleLoop.start(Tone.now());
   }
 
   /**
@@ -112,22 +142,23 @@ export class BreathLayer {
     this.suspended = true;
     this.breathNoise?.stop();
     this.hissNoise?.stop();
+    this.surfaceNoise?.stop();
     this.crackleNoise?.stop();
-    this._clearCrackle();
+    this.crackleLoop?.stop();
   }
 
   resume() {
     this.suspended = false;
     this.breathNoise?.start();
     this.hissNoise?.start();
+    this.surfaceNoise?.start();
     this.crackleNoise?.start();
-    this._scheduleCrackle();
+    this.crackleLoop?.start(Tone.now());
   }
 
   dispose() {
     this.suspended = true;
     this.disposed = true;
-    this._clearCrackle();
 
     this.breathNoise?.stop();
     this.breathNoise?.dispose();
@@ -139,6 +170,13 @@ export class BreathLayer {
     this.hissFilter?.dispose();
     this.hissGain?.dispose();
 
+    this.surfaceNoise?.stop();
+    this.surfaceNoise?.dispose();
+    this.surfaceFilter?.dispose();
+    this.surfaceGain?.dispose();
+
+    this.crackleLoop?.stop();
+    this.crackleLoop?.dispose();
     this.crackleNoise?.stop();
     this.crackleNoise?.dispose();
     this.crackleFilter?.dispose();
@@ -150,50 +188,50 @@ export class BreathLayer {
     this.hissNoise = null;
     this.hissFilter = null;
     this.hissGain = null;
+    this.surfaceNoise = null;
+    this.surfaceFilter = null;
+    this.surfaceGain = null;
+    this.crackleLoop = null;
     this.crackleNoise = null;
     this.crackleFilter = null;
     this.crackleGain = null;
   }
 
-  // --- Private: crackle scheduling ---
+  // --- Private: crackle engine ---
 
-  /** Schedule the next random crackle burst. */
-  _scheduleCrackle() {
-    if (this.suspended || this.disposed) return;
+  /**
+   * Called 25x/sec by Tone.Loop. Probabilistically fires a micro-burst
+   * of white noise (1-4ms) to simulate vinyl dust/surface imperfections.
+   *
+   * Amplitude distribution models real vinyl:
+   * - 90% are tiny surface ticks (0.05-0.25x volume)
+   * - 10% are audible pops (0.5-1.0x volume)
+   * - Occasional double-click (30% chance after a pop)
+   */
+  _tickCrackle(time) {
+    if (this.disposed || !this.crackleGain) return;
 
-    const delay = CRACKLE_MIN_INTERVAL +
-      Math.random() * (CRACKLE_MAX_INTERVAL - CRACKLE_MIN_INTERVAL);
+    if (Math.random() > CRACKLE_FIRE_PROBABILITY) return;
 
-    this._crackleTimer = setTimeout(() => this._fireCrackle(), delay);
-  }
+    // Amplitude: mostly tiny, occasionally loud
+    const isPop = Math.random() < CRACKLE_POP_PROBABILITY;
+    const amplitude = isPop
+      ? CRACKLE_VOLUME * (0.5 + Math.random() * 0.5)
+      : CRACKLE_VOLUME * (0.05 + Math.random() * 0.2);
 
-  /** Fire a single crackle: quick gain burst then silence. */
-  _fireCrackle() {
-    if (this.suspended || this.disposed || !this.crackleGain) return;
+    // Burst duration: 1-4ms (real dust impulses are < 5ms)
+    const duration = 0.001 + Math.random() * 0.003;
 
-    // Random amplitude for natural variation
-    const amplitude = CRACKLE_VOLUME * (0.3 + Math.random() * 0.7);
-    const now = Tone.now();
+    this.crackleGain.gain.setValueAtTime(amplitude, time);
+    this.crackleGain.gain.setValueAtTime(0, time + duration);
 
-    // Very short burst: 5-15ms
-    this.crackleGain.gain.setValueAtTime(amplitude, now);
-    this.crackleGain.gain.setValueAtTime(0, now + 0.005 + Math.random() * 0.01);
-
-    // Sometimes fire a second click 20-50ms later (double crackle)
-    if (Math.random() < 0.3) {
-      const secondAmp = amplitude * (0.3 + Math.random() * 0.4);
-      const secondTime = now + 0.02 + Math.random() * 0.03;
-      this.crackleGain.gain.setValueAtTime(secondAmp, secondTime);
-      this.crackleGain.gain.setValueAtTime(0, secondTime + 0.005 + Math.random() * 0.008);
-    }
-
-    this._scheduleCrackle();
-  }
-
-  _clearCrackle() {
-    if (this._crackleTimer) {
-      clearTimeout(this._crackleTimer);
-      this._crackleTimer = null;
+    // Pops sometimes have a trailing click 15-40ms later
+    if (isPop && Math.random() < 0.3) {
+      const echoAmp = amplitude * (0.2 + Math.random() * 0.3);
+      const echoTime = time + 0.015 + Math.random() * 0.025;
+      const echoDuration = 0.001 + Math.random() * 0.002;
+      this.crackleGain.gain.setValueAtTime(echoAmp, echoTime);
+      this.crackleGain.gain.setValueAtTime(0, echoTime + echoDuration);
     }
   }
 }
