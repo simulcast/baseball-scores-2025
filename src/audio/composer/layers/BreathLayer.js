@@ -10,7 +10,7 @@
  */
 import * as Tone from 'tone';
 
-const BASE_VOLUME = 0.03;
+const BASE_VOLUME = 0.04;
 const LFO_MIN_FREQ = 0.08;  // ~12s period
 const LFO_MAX_FREQ = 0.125; // ~8s period
 

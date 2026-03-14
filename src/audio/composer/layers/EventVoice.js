@@ -116,17 +116,20 @@ export class EventVoice {
 
   // --- Private ---
 
+  /** Random velocity (0.7–1.0) for natural dynamics. */
+  _vel() {
+    return 0.7 + Math.random() * 0.3;
+  }
+
   /**
-   * Safe trigger for monophonic synths (AMSynth, FMSynth).
-   * Cancels pending scheduled notes to avoid "start time must be strictly greater"
-   * errors during rapid game switching.
+   * Safe trigger for monophonic synths with humanized velocity.
+   * Catches scheduling errors during rapid game switching.
    */
   _safeTrigger(synth, note, duration, time) {
     try {
-      synth.triggerAttackRelease(note, duration, time);
+      synth.triggerAttackRelease(note, duration, time, this._vel());
     } catch (_) {
-      // Synth had a pending note with a later start time — skip this trigger.
-      // This is expected during rapid game switching.
+      // Synth had a pending note with a later start time — skip.
     }
   }
 

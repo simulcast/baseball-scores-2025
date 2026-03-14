@@ -31,6 +31,13 @@ export class PadLayer {
     // Panner for stereo placement
     this.panner = new Tone.Panner(panValue);
 
+    // Vibrato: slow analog pitch drift (~1 cent wandering)
+    this.vibrato = new Tone.Vibrato({
+      frequency: 0.12,
+      depth: 0.006,
+      wet: 1,
+    });
+
     // Chorus: slow, deep for lush detuning (Eno warmth)
     this.chorus = new Tone.Chorus({
       frequency: 0.18,
@@ -40,15 +47,14 @@ export class PadLayer {
     });
 
     // Main pad synth — fatsine: 3 detuned sine oscillators per voice.
-    // The built-in spread creates the warm, alive quality that a single
-    // sine lacks. Combined with slow chorus, this sounds like tape.
+    // Wider spread + vibrato + chorus = warm, drifting, alive.
     this.synth = new Tone.PolySynth(Tone.Synth, {
-      maxPolyphony: NUM_VOICES + 1, // +1 for crossfade overlap
+      maxPolyphony: NUM_VOICES + 1,
       voice: Tone.Synth,
       options: {
         oscillator: {
           type: 'fatsine',
-          spread: 20, // cents of detuning between the 3 internal oscillators
+          spread: 30,
           count: 3,
         },
         envelope: {
@@ -60,11 +66,12 @@ export class PadLayer {
       },
     });
 
-    // Volume control
-    this.gain = new Tone.Gain(0.12);
+    // Volume control — pad sits underneath pulse pools
+    this.gain = new Tone.Gain(0.09);
 
-    // Wire: synth → chorus → gain → panner → output
-    this.synth.connect(this.chorus);
+    // Wire: synth → vibrato → chorus → gain → panner → output
+    this.synth.connect(this.vibrato);
+    this.vibrato.connect(this.chorus);
     this.chorus.connect(this.gain);
     this.gain.connect(this.panner);
     this.panner.connect(output);
@@ -121,7 +128,7 @@ export class PadLayer {
       this._startVoices(harmonyState.chordTones);
 
       // Fade in
-      this.gain.gain.rampTo(0.12, duration * 0.5);
+      this.gain.gain.rampTo(0.09, duration * 0.5);
 
       this._crossfading = false;
       this._resetIdleDrift();
@@ -153,10 +160,12 @@ export class PadLayer {
     this._clearIdleDrift();
     this.synth?.releaseAll();
     this.synth?.dispose();
+    this.vibrato?.dispose();
     this.chorus?.dispose();
     this.gain?.dispose();
     this.panner?.dispose();
     this.synth = null;
+    this.vibrato = null;
     this.chorus = null;
     this.gain = null;
     this.panner = null;
