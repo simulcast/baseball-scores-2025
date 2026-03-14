@@ -45,10 +45,10 @@ const MainLayout = ({ gameId }) => {
 
     if (activeGameId === String(id)) {
       setActiveGame(null);
-      router.replace('/');
+      router.replace('/', { scroll: false });
     } else {
       setActiveGame(id);
-      router.replace(`/${id}`);
+      router.replace(`/${id}`, { scroll: false });
     }
   }, [activeGameId, games, setActiveGame, router]);
 
@@ -56,13 +56,13 @@ const MainLayout = ({ gameId }) => {
   useEffect(() => {
     if (activeGameId && games[activeGameId]?.status !== 'Live' && Object.keys(games).length > 0) {
       setActiveGame(null);
-      router.replace('/');
+      router.replace('/', { scroll: false });
     }
   }, [games, activeGameId, setActiveGame, router]);
 
   const goToDashboard = useCallback(() => {
     setActiveGame(null);
-    router.push('/');
+    router.push('/', { scroll: false });
   }, [setActiveGame, router]);
 
   const handleContainerClick = useCallback((e) => {
@@ -71,7 +71,7 @@ const MainLayout = ({ gameId }) => {
     const closestHeader = e.target.closest('h1');
     if (!closestCard && !closestHeader) {
       setActiveGame(null);
-      router.replace('/');
+      router.replace('/', { scroll: false });
     }
   }, [activeGameId, setActiveGame, router]);
 
