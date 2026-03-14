@@ -201,7 +201,7 @@ export class EventVoice {
   /** High bell tone — upper scale tone. */
   _playStrike(harmony) {
     const { scaleTones } = harmony;
-    const highTones = scaleTones.filter(t => t >= 72);
+    const highTones = scaleTones.filter(t => t >= 67);
     const tone = highTones.length > 0
       ? highTones[Math.floor(Math.random() * highTones.length)]
       : scaleTones[scaleTones.length - 1];

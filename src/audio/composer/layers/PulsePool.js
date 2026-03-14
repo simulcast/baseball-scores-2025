@@ -71,7 +71,7 @@ export class PulsePool {
     this.running = true;
 
     // Fade in
-    this.gain.gain.rampTo(0.05, fadeIn);
+    this.gain.gain.rampTo(0.09, fadeIn);
 
     // Start the loop
     this.loop.start(Tone.now());
@@ -142,7 +142,7 @@ export class PulsePool {
     }
 
     // Pick tones in the mid range for clarity
-    const midTones = scaleTones.filter(t => t >= 60 && t <= 84);
+    const midTones = scaleTones.filter(t => t >= 60 && t <= 76);
     const pool = midTones.length >= 3 ? midTones : scaleTones;
 
     // Generate pattern: pick notes somewhat randomly but musically
