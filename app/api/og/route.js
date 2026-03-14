@@ -325,6 +325,15 @@ function renderCountIndicator(label, count, total) {
 async function renderGenericImage() {
   // fonts loaded at module level
 
+  // Generate sine wave bars for ambient sound wave motif
+  const barCount = 48;
+  const bars = Array.from({ length: barCount }, (_, i) => {
+    const t = i / barCount;
+    // Composite sine waves for organic, ambient feel
+    const h = Math.abs(Math.sin(t * Math.PI * 3) * 0.7 + Math.sin(t * Math.PI * 7 + 1) * 0.3);
+    return Math.max(4, h * 60);
+  });
+
   return new ImageResponse(
     (
       <div style={{
@@ -349,8 +358,28 @@ async function renderGenericImage() {
           display: 'flex',
           fontSize: '28px',
           color: COLORS.whiteDim,
+          marginBottom: '32px',
         }}>
-          Live MLB Games
+          ambient soundtracks for the national pastime
+        </div>
+        {/* Sound wave motif */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          height: '64px',
+        }}>
+          {bars.map((h, i) => (
+            <div
+              key={i}
+              style={{
+                width: '6px',
+                height: `${h}px`,
+                backgroundColor: COLORS.whiteFaint,
+                borderRadius: '3px',
+              }}
+            />
+          ))}
         </div>
       </div>
     ),
