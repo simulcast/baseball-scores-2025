@@ -12,16 +12,10 @@ export default function Icon() {
         justifyContent: 'center',
         width: '100%',
         height: '100%',
-        backgroundColor: '#1a2f16',
-        borderRadius: '4px',
+        fontSize: '28px',
+        lineHeight: 1,
       }}>
-        <div style={{
-          display: 'flex',
-          width: '20px',
-          height: '20px',
-          borderRadius: '50%',
-          backgroundColor: '#ffffff',
-        }} />
+        ⚾
       </div>
     ),
     { ...size },
