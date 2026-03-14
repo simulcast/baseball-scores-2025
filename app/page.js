@@ -1,16 +1,16 @@
 import HomeClient from '../src/components/HomeClient';
 
 export const metadata = {
-  title: 'Baseball Scores | Live MLB Games',
-  description: 'Live MLB baseball scores with generative ambient music. Track every game in real time.',
+  title: 'Baseball Scores | ambient soundtracks for the national pastime',
+  description: 'ambient soundtracks for the national pastime',
   openGraph: {
-    title: 'Baseball Scores | Live MLB Games',
-    description: 'Live MLB baseball scores with generative ambient music.',
+    title: 'Baseball Scores | ambient soundtracks for the national pastime',
+    description: 'ambient soundtracks for the national pastime',
     images: [{ url: '/api/og', width: 1200, height: 630 }],
   },
   twitter: {
-    title: 'Baseball Scores | Live MLB Games',
-    description: 'Live MLB baseball scores with generative ambient music.',
+    title: 'Baseball Scores | ambient soundtracks for the national pastime',
+    description: 'ambient soundtracks for the national pastime',
     images: ['/api/og'],
   },
 };

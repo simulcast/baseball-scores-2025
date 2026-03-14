@@ -11,7 +11,7 @@ export const metadata = {
     default: 'Baseball Scores',
     template: '%s',
   },
-  description: 'Live MLB baseball scores with generative ambient music.',
+  description: 'ambient soundtracks for the national pastime',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.svg',
