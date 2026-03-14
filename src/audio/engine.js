@@ -1,6 +1,6 @@
 import * as Tone from 'tone';
 import { diffGameEvents } from './diffGameEvents';
-import { SoundBank } from './sounds';
+import { Composer } from './composer';
 
 let instance = null;
 
@@ -10,7 +10,7 @@ export class AudioEngine {
     instance = this;
 
     this.masterGain = null;
-    this.soundBank = null;
+    this.composer = null;
     this.unsub = null;
     this.connected = false;
     this.prevGame = null;
@@ -25,7 +25,7 @@ export class AudioEngine {
       await Tone.start();
 
       this.masterGain = new Tone.Gain(this._volume).toDestination();
-      this.soundBank = new SoundBank(this.masterGain);
+      this.composer = new Composer(this.masterGain);
       this.connected = true;
 
       // Snapshot initial active game
@@ -42,7 +42,7 @@ export class AudioEngine {
 
         if (nextGame !== this.prevGame) {
           const events = diffGameEvents(this.prevGame, nextGame);
-          this._handleEvents(events);
+          this.composer.update(nextGame, events);
           this.prevGame = nextGame;
         }
       });
@@ -53,26 +53,9 @@ export class AudioEngine {
       } catch (_) { /* already closed or never opened */ }
       this.connected = false;
       this.masterGain = null;
-      this.soundBank = null;
+      this.composer = null;
       instance = null;
       throw err;
-    }
-  }
-
-  _handleEvents(events) {
-    if (this._paused) return;
-
-    for (const event of events) {
-      switch (event.type) {
-        case 'runScored': this.soundBank.playRunScored(event.detail); break;
-        case 'outRecorded': this.soundBank.playOutRecorded(event.detail); break;
-        case 'inningChange': this.soundBank.playInningChange(event.detail); break;
-        case 'runnerAdvance': this.soundBank.playRunnerAdvance(event.detail); break;
-        case 'statusChange': this.soundBank.playStatusChange(event.detail); break;
-        case 'strike': this.soundBank.playStrike(event.detail); break;
-        case 'ball': this.soundBank.playBall(event.detail); break;
-        // gameSelected is intentionally silent — no sound on initial selection
-      }
     }
   }
 
@@ -81,8 +64,8 @@ export class AudioEngine {
       this.unsub();
       this.unsub = null;
     }
-    this.soundBank?.dispose();
-    this.soundBank = null;
+    this.composer?.dispose();
+    this.composer = null;
     this.masterGain?.dispose();
     this.masterGain = null;
     this.connected = false;
@@ -95,6 +78,7 @@ export class AudioEngine {
     if (this.masterGain && !this._paused) {
       this._paused = true;
       this.masterGain.gain.value = 0;
+      this.composer?.suspend();
     }
   }
 
@@ -102,6 +86,7 @@ export class AudioEngine {
     if (this.masterGain && this._paused) {
       this._paused = false;
       this.masterGain.gain.value = this._volume;
+      this.composer?.resume();
     }
   }
 
