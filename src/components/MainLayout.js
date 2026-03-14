@@ -7,6 +7,7 @@ import GameList from './GameList';
 
 import { useGameStore } from '../store/gameStore';
 import { useGamePolling } from '../hooks/useGamePolling';
+import * as audio from '../audio';
 
 const MainLayout = ({ gameId }) => {
   const router = useRouter();
@@ -15,7 +16,15 @@ const MainLayout = ({ gameId }) => {
   const activeGameId = useGameStore((s) => s.activeGameId);
   const setActiveGame = useGameStore((s) => s.setActiveGame);
 
-  useGamePolling({ interval: 5000 });
+  useGamePolling({ interval: 1000 });
+
+  // Audio engine is a page-level singleton — survives component remounts (HMR, Strict Mode).
+  // Cleanup happens on page unload, not component unmount.
+  useEffect(() => {
+    const cleanup = () => audio.disconnect();
+    window.addEventListener('beforeunload', cleanup);
+    return () => window.removeEventListener('beforeunload', cleanup);
+  }, []);
 
   // Sync URL gameId with store
   useEffect(() => {
@@ -24,8 +33,13 @@ const MainLayout = ({ gameId }) => {
 
   const gamesLoading = Object.keys(games).length === 0;
 
-  const handleGameSelect = useCallback((id) => {
+  const handleGameSelect = useCallback(async (id) => {
     if (games[id]?.status !== 'Live') return;
+
+    // Connect audio on first interaction (user gesture satisfies AudioContext requirement)
+    if (!audio.isConnected()) {
+      await audio.connect(useGameStore);
+    }
 
     if (activeGameId === String(id)) {
       setActiveGame(null);
