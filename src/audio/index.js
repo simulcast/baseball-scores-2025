@@ -1,89 +1,31 @@
-// src/audio/index.js
+import { AudioEngine } from './engine';
 
-import { getEngine } from './engine.js';
+let engine = null;
 
-/**
- * Connect the audio engine to the game store and start playback
- * @param {Object} store - Zustand store instance
- * @returns {Promise<void>}
- */
-export async function connect(store) {
-  const engine = getEngine();
-
-  if (!engine.isInitialized) {
-    await engine.initialize();
-  }
-
-  engine.subscribeToStore(store);
-  await engine.start();
-
-  console.log('[Audio] Connected to game store');
+export function connect(store) {
+  if (!engine) engine = new AudioEngine();
+  return engine.connect(store);
 }
 
-/**
- * Disconnect the audio engine and cleanup
- */
 export function disconnect() {
-  const engine = getEngine();
-  engine.disconnect();
-
-  console.log('[Audio] Disconnected');
+  if (engine) {
+    engine.disconnect();
+    engine = null;
+  }
 }
 
-/**
- * Check if audio is currently connected and playing
- * @returns {boolean}
- */
-export function isConnected() {
-  const engine = getEngine();
-  return engine.isInitialized && engine.isPlaying;
-}
-
-/**
- * Pause audio playback (keeps connection)
- */
 export function pause() {
-  const engine = getEngine();
-  engine.stop();
+  engine?.pause();
 }
 
-/**
- * Resume audio playback
- * @returns {Promise<void>}
- */
-export async function resume() {
-  const engine = getEngine();
-  await engine.start();
+export function resume() {
+  engine?.resume();
 }
 
-/**
- * Set master volume
- * @param {number} volume - Volume level 0-1
- */
-export function setMasterVolume(volume) {
-  const engine = getEngine();
-  engine.setVolume(volume);
+export function setMasterVolume(v) {
+  engine?.setMasterVolume(v);
 }
 
-/**
- * Get current master volume
- * @returns {number}
- */
-export function getMasterVolume() {
-  const engine = getEngine();
-  return engine.masterVolume;
+export function isConnected() {
+  return engine?.isConnected() ?? false;
 }
-
-// Re-export engine for advanced usage
-export { getEngine } from './engine.js';
-
-// Re-export interpreter for testing/debugging
-export { interpret } from './interpreter.js';
-
-// Re-export harmony utilities
-export {
-  noteToFrequency,
-  getModeFromScore,
-  getTonalCenter,
-  getPadVoicing
-} from './harmony.js';
