@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@elemaudio/core": "^4.0.1",
-    "@elemaudio/web-renderer": "^4.0.3",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
@@ -16,6 +14,7 @@
     "next": "^16.1.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "tone": "^15.1.22",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
