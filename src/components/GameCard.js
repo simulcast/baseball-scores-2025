@@ -76,19 +76,26 @@ const CountIndicator = ({ count, total, label }) => (
   </Box>
 );
 
+export const baseColor = (occupied) => occupied ? 'var(--runner-on)' : 'var(--runner-off)';
+
 const BaseballDiamond = ({ runners = [] }) => {
-  const baseSize = 10;
-  const baseOffset = 4;
-  const baseStyles = { width: `${baseSize}px`, height: `${baseSize}px`, position: 'absolute' };
+  const baseStyle = {
+    width: '35%',
+    height: '35%',
+    position: 'absolute',
+    transition: 'background-color 0.3s ease',
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mx: 1, height: '45px', justifyContent: 'flex-start' }}>
       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>RUNNERS ON</Typography>
-      <Box sx={{ position: 'relative', width: '32px', height: '32px', transform: 'rotate(-45deg)', mt: 0.5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <Box sx={{ ...baseStyles, top: `${baseOffset}px`, left: `${baseOffset}px`, backgroundColor: runners[2] ? '#fff' : 'rgba(255,255,255,0.3)' }} />
-        <Box sx={{ ...baseStyles, top: `${baseOffset}px`, right: `${baseOffset}px`, backgroundColor: runners[1] ? '#fff' : 'rgba(255,255,255,0.3)' }} />
-        <Box sx={{ ...baseStyles, bottom: '-2.5px', right: `${baseOffset}px`, backgroundColor: runners[0] ? '#fff' : 'rgba(255,255,255,0.3)' }} />
-        <Box sx={{ ...baseStyles, bottom: `${baseOffset}px`, left: `${baseOffset}px`, backgroundColor: 'transparent' }} />
+      <Box sx={{ position: 'relative', width: 32, aspectRatio: '1 / 1', transform: 'rotate(-45deg)', mt: 0.5 }}>
+        {/* 3rd base — top-left */}
+        <Box data-testid="base-3B" sx={{ ...baseStyle, top: '10%', left: '10%', backgroundColor: baseColor(runners[2]) }} />
+        {/* 2nd base — top-right */}
+        <Box data-testid="base-2B" sx={{ ...baseStyle, top: '10%', right: '10%', backgroundColor: baseColor(runners[1]) }} />
+        {/* 1st base — bottom-right */}
+        <Box data-testid="base-1B" sx={{ ...baseStyle, bottom: '10%', right: '10%', backgroundColor: baseColor(runners[0]) }} />
       </Box>
     </Box>
   );
