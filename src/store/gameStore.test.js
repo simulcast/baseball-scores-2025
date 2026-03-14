@@ -1,4 +1,4 @@
-import { useGameStore, gameEqual } from './gameStore';
+import { useGameStore, gameEqual, gameNotBehind, LIVE_PROTECTION_MS } from './gameStore';
 import { normalizeGame } from '../utils/normalizeGame';
 
 // Helper to reset store between tests
@@ -10,6 +10,7 @@ beforeEach(() => {
     lastAcceptedLiveSeq: 0,
     lastUpdatedAt: null,
     pollError: null,
+    livePolledAt: {},
   });
 });
 
@@ -596,6 +597,277 @@ describe('gameStore', () => {
       })]);
 
       expect(useGameStore.getState().games['200'].homeScore).toBe(7);
+    });
+  });
+
+  describe('gameNotBehind', () => {
+    const makeLive = (inning, isTopInning, outs) => ({
+      status: 'Live', inning, isTopInning, outs,
+    });
+
+    it('returns true when existing is not Live', () => {
+      expect(gameNotBehind(
+        { status: 'Preview', inning: 0, isTopInning: true, outs: 0 },
+        { status: 'Live', inning: 1, isTopInning: true, outs: 0 },
+      )).toBe(true);
+    });
+
+    it('returns true when incoming is not Live', () => {
+      expect(gameNotBehind(
+        makeLive(5, true, 2),
+        { status: 'Final', inning: 9, isTopInning: false, outs: 3 },
+      )).toBe(true);
+    });
+
+    it('returns true when incoming is ahead in inning half', () => {
+      expect(gameNotBehind(makeLive(3, false, 2), makeLive(4, true, 0))).toBe(true);
+    });
+
+    it('returns false when incoming is behind in inning half', () => {
+      expect(gameNotBehind(makeLive(4, true, 0), makeLive(3, false, 2))).toBe(false);
+    });
+
+    it('returns true when same half and outs are equal', () => {
+      expect(gameNotBehind(makeLive(4, true, 1), makeLive(4, true, 1))).toBe(true);
+    });
+
+    it('returns true when same half and incoming has more outs', () => {
+      expect(gameNotBehind(makeLive(4, true, 1), makeLive(4, true, 2))).toBe(true);
+    });
+
+    it('returns false when same half and incoming has fewer outs', () => {
+      expect(gameNotBehind(makeLive(4, true, 2), makeLive(4, true, 1))).toBe(false);
+    });
+  });
+
+  describe('livePolledAt protection window (Layer 2)', () => {
+    it('rejects schedule data for game within protection window', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+
+      // Seed game 100, then live-poll it (sets livePolledAt)
+      ingestGames([makeRawGame(100)]);
+      ingestGame(makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 5 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      }), 500);
+
+      // Deselect (no activeGameId) — game is now protected by livePolledAt
+      useGameStore.setState({ activeGameId: null });
+
+      // Schedule returns stale data — should be blocked by Layer 2
+      ingestGames([makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 2 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      })]);
+
+      expect(useGameStore.getState().games['100'].homeScore).toBe(5);
+    });
+
+    it('accepts schedule data for game outside protection window', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+
+      ingestGames([makeRawGame(100)]);
+      ingestGame(makeRawGame(100), 500);
+
+      // Simulate expired window by backdating livePolledAt
+      useGameStore.setState({
+        activeGameId: null,
+        livePolledAt: { '100': Date.now() - LIVE_PROTECTION_MS - 1000 },
+      });
+
+      // Schedule with updated score — should be accepted (window expired)
+      ingestGames([makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 3 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      })]);
+
+      expect(useGameStore.getState().games['100'].homeScore).toBe(3);
+    });
+
+    it('prunes expired livePolledAt entries', () => {
+      const { ingestGames } = useGameStore.getState();
+
+      useGameStore.setState({
+        livePolledAt: {
+          '100': Date.now() - LIVE_PROTECTION_MS - 1000,  // expired
+          '200': Date.now(),                                // fresh
+        },
+      });
+
+      ingestGames([makeRawGame(100)]);
+
+      const { livePolledAt } = useGameStore.getState();
+      expect(livePolledAt['100']).toBeUndefined();
+      expect(livePolledAt['200']).toBeDefined();
+    });
+
+    it('does not block non-live-polled games', () => {
+      const { ingestGames } = useGameStore.getState();
+
+      ingestGames([makeRawGame(100)]);
+
+      // Schedule updates game 100 (never live-polled) — should work
+      ingestGames([makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 4 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      })]);
+
+      expect(useGameStore.getState().games['100'].homeScore).toBe(4);
+    });
+  });
+
+  describe('gameNotBehind in ingestGames (Layer 3)', () => {
+    it('rejects inning regression on deselected game past protection window', () => {
+      const { ingestGames } = useGameStore.getState();
+
+      // Seed game at top of 4th
+      ingestGames([makeRawGame(100, {
+        linescore: { currentInning: 4, isTopInning: true, inningState: 'Top', balls: 0, strikes: 0, outs: 1, offense: {} },
+      })]);
+
+      // Schedule returns bottom of 3rd — should be rejected by Layer 3
+      ingestGames([makeRawGame(100, {
+        linescore: { currentInning: 3, isTopInning: false, inningState: 'Bottom', balls: 0, strikes: 0, outs: 2, offense: {} },
+      })]);
+
+      expect(useGameStore.getState().games['100'].inning).toBe(4);
+      expect(useGameStore.getState().games['100'].isTopInning).toBe(true);
+    });
+
+    it('rejects out regression on deselected game past protection window', () => {
+      const { ingestGames } = useGameStore.getState();
+
+      // Seed game at top of 4th, 2 outs
+      ingestGames([makeRawGame(100, {
+        linescore: { currentInning: 4, isTopInning: true, inningState: 'Top', balls: 0, strikes: 0, outs: 2, offense: {} },
+      })]);
+
+      // Schedule returns same half but only 1 out — should be rejected
+      ingestGames([makeRawGame(100, {
+        linescore: { currentInning: 4, isTopInning: true, inningState: 'Top', balls: 0, strikes: 0, outs: 1, offense: {} },
+      })]);
+
+      expect(useGameStore.getState().games['100'].outs).toBe(2);
+    });
+
+    it('accepts schedule data that has caught up', () => {
+      const { ingestGames } = useGameStore.getState();
+
+      ingestGames([makeRawGame(100, {
+        linescore: { currentInning: 4, isTopInning: true, inningState: 'Top', balls: 0, strikes: 0, outs: 1, offense: {} },
+      })]);
+
+      // Schedule returns same inning, same or more outs — accepted
+      ingestGames([makeRawGame(100, {
+        linescore: { currentInning: 4, isTopInning: true, inningState: 'Top', balls: 2, strikes: 1, outs: 2, offense: {} },
+      })]);
+
+      expect(useGameStore.getState().games['100'].outs).toBe(2);
+      expect(useGameStore.getState().games['100'].balls).toBe(2);
+    });
+  });
+
+  describe('gameNotBehind in ingestGame (Layer 3 for live tier)', () => {
+    it('rejects late live response behind current store state', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+
+      ingestGames([makeRawGame(100, {
+        linescore: { currentInning: 5, isTopInning: true, inningState: 'Top', balls: 0, strikes: 0, outs: 0, offense: {} },
+      })]);
+
+      // Late live response from inning 4 — should be rejected
+      ingestGame(makeRawGame(100, {
+        linescore: { currentInning: 4, isTopInning: false, inningState: 'Bottom', balls: 1, strikes: 2, outs: 2, offense: {} },
+      }), undefined);
+
+      expect(useGameStore.getState().games['100'].inning).toBe(5);
+    });
+
+    it('sets livePolledAt on successful live ingest', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+
+      ingestGames([makeRawGame(100)]);
+      const before = Date.now();
+      ingestGame(makeRawGame(100), 500);
+
+      const { livePolledAt } = useGameStore.getState();
+      expect(livePolledAt['100']).toBeGreaterThanOrEqual(before);
+      expect(livePolledAt['100']).toBeLessThanOrEqual(Date.now());
+    });
+  });
+
+  describe('end-to-end: rapid game switching A→B→A', () => {
+    it('never regresses game A during switch', () => {
+      const { ingestGames, ingestGame, setActiveGame } = useGameStore.getState();
+
+      // Seed both games
+      ingestGames([makeRawGame(100), makeRawGame(200)]);
+
+      // Select game A, live-poll to top of 4th
+      setActiveGame(100);
+      ingestGame(makeRawGame(100, {
+        linescore: { currentInning: 4, isTopInning: true, inningState: 'Top', balls: 2, strikes: 1, outs: 1, offense: {} },
+      }), 1000);
+      expect(useGameStore.getState().games['100'].inning).toBe(4);
+
+      // Switch to game B
+      setActiveGame(200);
+      ingestGame(makeRawGame(200, {
+        linescore: { currentInning: 6, isTopInning: false, inningState: 'Bottom', balls: 0, strikes: 0, outs: 0, offense: {} },
+      }), 2000);
+
+      // Schedule returns stale data for game A (bottom 3rd) — blocked by Layer 2
+      ingestGames([
+        makeRawGame(100, {
+          linescore: { currentInning: 3, isTopInning: false, inningState: 'Bottom', balls: 0, strikes: 0, outs: 2, offense: {} },
+        }),
+        makeRawGame(200),
+      ]);
+
+      expect(useGameStore.getState().games['100'].inning).toBe(4);
+      expect(useGameStore.getState().games['100'].isTopInning).toBe(true);
+
+      // Switch back to game A — live poll picks up
+      setActiveGame(100);
+      ingestGame(makeRawGame(100, {
+        linescore: { currentInning: 4, isTopInning: true, inningState: 'Top', balls: 3, strikes: 1, outs: 1, offense: {} },
+      }), 3000);
+
+      // A still at inning 4, count advanced
+      expect(useGameStore.getState().games['100'].inning).toBe(4);
+      expect(useGameStore.getState().games['100'].balls).toBe(3);
+    });
+  });
+
+  describe('end-to-end: deselect with within-out stale count', () => {
+    it('blocks stale count within same out via protection window', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+
+      ingestGames([makeRawGame(100)]);
+
+      // Live-poll to inning 3, 1 out, count 2-1
+      ingestGame(makeRawGame(100, {
+        linescore: { currentInning: 3, isTopInning: true, inningState: 'Top', balls: 2, strikes: 1, outs: 1, offense: {} },
+      }), 500);
+
+      // Deselect
+      useGameStore.setState({ activeGameId: null });
+
+      // Schedule returns same inning/outs but stale count 0-0 — blocked by Layer 2 (within window)
+      ingestGames([makeRawGame(100, {
+        linescore: { currentInning: 3, isTopInning: true, inningState: 'Top', balls: 0, strikes: 0, outs: 1, offense: {} },
+      })]);
+
+      expect(useGameStore.getState().games['100'].balls).toBe(2);
+      expect(useGameStore.getState().games['100'].strikes).toBe(1);
     });
   });
 });
