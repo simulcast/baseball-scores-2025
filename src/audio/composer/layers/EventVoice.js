@@ -20,34 +20,34 @@ export class EventVoice {
     // Panner for stereo event placement
     this.panner = new Tone.Panner(0);
 
-    // Bell synth for strikes and melodic events (FMSynth for bell timbre)
+    // Bell synth for strikes and inning changes — softer, more glass than metal
     this.bellSynth = new Tone.FMSynth({
-      harmonicity: 5.07,
-      modulationIndex: 1.2,
-      envelope: { attack: 0.01, decay: 0.8, sustain: 0.0, release: 1.5 },
+      harmonicity: 3.5,
+      modulationIndex: 0.6,
+      envelope: { attack: 0.05, decay: 1.0, sustain: 0.0, release: 2.0 },
       modulation: { type: 'sine' },
-      modulationEnvelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.5 },
+      modulationEnvelope: { attack: 0.04, decay: 0.4, sustain: 0, release: 0.8 },
     });
 
-    // Arpeggio synth for run scored (AMSynth for crystalline quality)
+    // Arpeggio synth for run scored — warm, not crystalline
     this.arpeggioSynth = new Tone.AMSynth({
-      harmonicity: 2,
-      envelope: { attack: 0.05, decay: 0.3, sustain: 0.2, release: 2 },
+      harmonicity: 1.5,
+      envelope: { attack: 0.08, decay: 0.4, sustain: 0.15, release: 2.5 },
       modulation: { type: 'sine' },
-      modulationEnvelope: { attack: 0.1, decay: 0.2, sustain: 0.3, release: 0.5 },
+      modulationEnvelope: { attack: 0.15, decay: 0.3, sustain: 0.2, release: 0.6 },
     });
 
-    // Low synth for outs and balls (warm, muted)
+    // Low synth for outs and balls — round, muted
     this.lowSynth = new Tone.FMSynth({
-      harmonicity: 1.2,
-      modulationIndex: 0.5,
-      envelope: { attack: 0.05, decay: 0.4, sustain: 0, release: 0.6 },
+      harmonicity: 1.0,
+      modulationIndex: 0.3,
+      envelope: { attack: 0.08, decay: 0.5, sustain: 0, release: 0.8 },
       modulation: { type: 'sine' },
-      modulationEnvelope: { attack: 0.1, decay: 0.3, sustain: 0, release: 0.4 },
+      modulationEnvelope: { attack: 0.12, decay: 0.4, sustain: 0, release: 0.5 },
     });
 
-    // Gain for volume control
-    this.gain = new Tone.Gain(0.2);
+    // Gain for volume control — events punctuate, not dominate
+    this.gain = new Tone.Gain(0.12);
 
     // Wire: synths → gain → panner → output
     this.bellSynth.connect(this.gain);

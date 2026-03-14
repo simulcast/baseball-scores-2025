@@ -30,16 +30,16 @@ export class PulsePool {
     // Panner for stereo placement
     this.panner = new Tone.Panner(panValue);
 
-    // Bell/mallet synth — FMSynth for metallic timbre
+    // Mallet/glass synth — softer FM timbre, less metallic
     this.synth = new Tone.FMSynth({
-      harmonicity: timbreColor.harmonicity ?? 5.07,
-      modulationIndex: timbreColor.modulationIndex ?? 1.2,
-      envelope: { attack: 0.01, decay: 0.6, sustain: 0.0, release: 1.0 },
+      harmonicity: timbreColor.harmonicity ?? 3.5,
+      modulationIndex: timbreColor.modulationIndex ?? 0.7,
+      envelope: { attack: 0.06, decay: 0.8, sustain: 0.0, release: 1.2 },
       modulation: { type: 'sine' },
-      modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.3 },
+      modulationEnvelope: { attack: 0.04, decay: 0.3, sustain: 0, release: 0.5 },
     });
 
-    // Volume control — starts at 0, fades in
+    // Volume control — starts at 0, fades in (sits inside the pad, not on top)
     this.gain = new Tone.Gain(0);
 
     // Wire: synth → gain → panner → output
@@ -71,7 +71,7 @@ export class PulsePool {
     this.running = true;
 
     // Fade in
-    this.gain.gain.rampTo(0.08, fadeIn);
+    this.gain.gain.rampTo(0.035, fadeIn);
 
     // Start the loop
     this.loop.start(Tone.now());

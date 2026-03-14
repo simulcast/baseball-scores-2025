@@ -31,31 +31,37 @@ export class PadLayer {
     // Panner for stereo placement
     this.panner = new Tone.Panner(panValue);
 
-    // Chorus for width
+    // Chorus: slow, deep for lush detuning (Eno warmth)
     this.chorus = new Tone.Chorus({
-      frequency: 0.3,
-      depth: 0.4,
-      delayTime: 3.5,
-      wet: 0.5,
+      frequency: 0.18,
+      depth: 0.7,
+      delayTime: 4.5,
+      wet: 0.6,
     });
 
-    // Main pad synth — basic Synth (not FM) for CPU efficiency
+    // Main pad synth — fatsine: 3 detuned sine oscillators per voice.
+    // The built-in spread creates the warm, alive quality that a single
+    // sine lacks. Combined with slow chorus, this sounds like tape.
     this.synth = new Tone.PolySynth(Tone.Synth, {
       maxPolyphony: NUM_VOICES + 1, // +1 for crossfade overlap
       voice: Tone.Synth,
       options: {
-        oscillator: { type: 'sine' },
+        oscillator: {
+          type: 'fatsine',
+          spread: 20, // cents of detuning between the 3 internal oscillators
+          count: 3,
+        },
         envelope: {
-          attack: 3,
-          decay: 1,
-          sustain: 0.8,
-          release: 4,
+          attack: 4,
+          decay: 2,
+          sustain: 0.7,
+          release: 5,
         },
       },
     });
 
     // Volume control
-    this.gain = new Tone.Gain(0.15);
+    this.gain = new Tone.Gain(0.12);
 
     // Wire: synth → chorus → gain → panner → output
     this.synth.connect(this.chorus);
@@ -115,7 +121,7 @@ export class PadLayer {
       this._startVoices(harmonyState.chordTones);
 
       // Fade in
-      this.gain.gain.rampTo(0.15, duration * 0.5);
+      this.gain.gain.rampTo(0.12, duration * 0.5);
 
       this._crossfading = false;
       this._resetIdleDrift();

@@ -67,9 +67,9 @@ describe('teamPalette', () => {
     expect(p.padColor.harmonicity).toBeLessThanOrEqual(2.0);
   });
 
-  test('pulseColor harmonicity is in bell-like range', () => {
+  test('pulseColor harmonicity is in glass/mallet range', () => {
     const p = teamPalette(147, 111);
-    expect(p.pulseColor.harmonicity).toBeGreaterThanOrEqual(4.0);
-    expect(p.pulseColor.harmonicity).toBeLessThanOrEqual(6.0);
+    expect(p.pulseColor.harmonicity).toBeGreaterThanOrEqual(2.5);
+    expect(p.pulseColor.harmonicity).toBeLessThanOrEqual(4.0);
   });
 });

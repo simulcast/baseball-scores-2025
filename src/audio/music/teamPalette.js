@@ -27,10 +27,10 @@ export function teamPalette(homeId, awayId) {
     modulationIndex: 0.5 + (homeSeed % 5) * 0.15,   // 0.5 - 1.1
   };
 
-  // Pulse timbre color: from away team
+  // Pulse timbre color: from away team (softer range for glass/mallet sound)
   const pulseColor = {
-    harmonicity: 4.5 + (awaySeed % 5) * 0.3,        // 4.5 - 5.7
-    modulationIndex: 0.8 + (awaySeed % 6) * 0.15,   // 0.8 - 1.55
+    harmonicity: 2.8 + (awaySeed % 5) * 0.25,       // 2.8 - 3.8
+    modulationIndex: 0.4 + (awaySeed % 6) * 0.1,    // 0.4 - 0.9
   };
 
   return { rootOffset, modeBias, padColor, pulseColor };
