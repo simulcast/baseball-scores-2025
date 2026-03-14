@@ -5,6 +5,7 @@ export const useGameStore = create((set, get) => ({
   games: {},
   activeGameId: null,
   lastAcceptedSeq: 0,
+  lastAcceptedLiveSeq: 0,
   lastUpdatedAt: null,
   pollError: null,
 
@@ -26,6 +27,13 @@ export const useGameStore = create((set, get) => ({
       if (!normalized) continue;
 
       const id = normalized.gameId;
+
+      // Skip active game when live polling is active — live feed has fresher data
+      if (id === activeGameId && get().lastAcceptedLiveSeq > 0) {
+        next[id] = prev[id];
+        continue;
+      }
+
       const existing = prev[id];
 
       // Keep old reference if nothing changed (referential stability)
@@ -58,6 +66,40 @@ export const useGameStore = create((set, get) => ({
     } else {
       set(metadata);
     }
+  },
+
+  // Single-game ingest for live feed updates. Structurally mirrors ingestGames
+  // but merges a single game instead of replacing the full set. Uses its own
+  // lastAcceptedLiveSeq to avoid interfering with schedule-tier staleness checks.
+  // See ingestGames above for the batch counterpart.
+  ingestGame: (rawGame, seq) => {
+    if (!rawGame) return;
+
+    const { games: prev, lastAcceptedLiveSeq } = get();
+
+    if (seq !== undefined && seq <= lastAcceptedLiveSeq) {
+      console.debug('[gameStore] dropped stale live response', { seq, lastAcceptedLiveSeq });
+      return;
+    }
+
+    const normalized = normalizeGame(rawGame);
+    if (!normalized) return;
+
+    const id = normalized.gameId;
+    const existing = prev[id];
+
+    const metadata = {
+      lastAcceptedLiveSeq: seq ?? get().lastAcceptedLiveSeq,
+      lastUpdatedAt: Date.now(),
+      pollError: null,
+    };
+
+    if (existing && gameEqual(existing, normalized)) {
+      set(metadata);
+      return;
+    }
+
+    set({ games: { ...prev, [id]: normalized }, ...metadata });
   },
 
   setPollError: (msg) => {

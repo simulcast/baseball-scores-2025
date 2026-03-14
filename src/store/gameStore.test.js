@@ -7,6 +7,7 @@ beforeEach(() => {
     games: {},
     activeGameId: null,
     lastAcceptedSeq: 0,
+    lastAcceptedLiveSeq: 0,
     lastUpdatedAt: null,
     pollError: null,
   });
@@ -434,6 +435,167 @@ describe('gameStore', () => {
       const { setActiveGame } = useGameStore.getState();
       setActiveGame(999);
       expect(useGameStore.getState().getActiveGame()).toBeNull();
+    });
+  });
+
+  describe('ingestGame (single-game live feed)', () => {
+    it('merges a single game into existing games', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+      ingestGames([makeRawGame(100), makeRawGame(200)]);
+
+      const updatedRaw = makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 3 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 1 },
+        },
+      });
+      ingestGame(updatedRaw, 500);
+
+      const { games } = useGameStore.getState();
+      expect(games['100'].homeScore).toBe(3);
+      expect(games['200']).toBeDefined(); // other games untouched
+    });
+
+    it('keeps same reference when game data is unchanged', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+      ingestGames([makeRawGame(100)]);
+      const ref1 = useGameStore.getState().games['100'];
+
+      ingestGame(makeRawGame(100), 500);
+      const ref2 = useGameStore.getState().games['100'];
+
+      expect(ref1).toBe(ref2);
+    });
+
+    it('creates new reference when game data changes', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+      ingestGames([makeRawGame(100)]);
+      const ref1 = useGameStore.getState().games['100'];
+
+      ingestGame(makeRawGame(100, {
+        linescore: { currentInning: 5, isTopInning: false, inningState: 'Bottom', balls: 0, strikes: 0, outs: 0, offense: {} },
+      }), 500);
+      const ref2 = useGameStore.getState().games['100'];
+
+      expect(ref1).not.toBe(ref2);
+      expect(ref2.inning).toBe(5);
+    });
+
+    it('uses lastAcceptedLiveSeq independently from lastAcceptedSeq', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+
+      ingestGames([makeRawGame(100)], 1000);
+      expect(useGameStore.getState().lastAcceptedSeq).toBe(1000);
+      expect(useGameStore.getState().lastAcceptedLiveSeq).toBe(0);
+
+      ingestGame(makeRawGame(100), 500);
+      expect(useGameStore.getState().lastAcceptedLiveSeq).toBe(500);
+      expect(useGameStore.getState().lastAcceptedSeq).toBe(1000); // unchanged
+    });
+
+    it('drops stale responses based on lastAcceptedLiveSeq', () => {
+      const { ingestGames, ingestGame } = useGameStore.getState();
+      ingestGames([makeRawGame(100)]);
+
+      ingestGame(makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 5 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      }), 500);
+
+      // Stale response with lower seq
+      ingestGame(makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 3 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      }), 400);
+
+      expect(useGameStore.getState().games['100'].homeScore).toBe(5); // kept newer
+    });
+
+    it('handles null input gracefully', () => {
+      const { ingestGame } = useGameStore.getState();
+      expect(() => ingestGame(null, 100)).not.toThrow();
+    });
+
+    it('updates lastUpdatedAt and clears pollError', () => {
+      const { ingestGame, setPollError } = useGameStore.getState();
+      setPollError('some error');
+
+      const before = Date.now();
+      ingestGame(makeRawGame(100), 500);
+
+      const state = useGameStore.getState();
+      expect(state.pollError).toBeNull();
+      expect(state.lastUpdatedAt).toBeGreaterThanOrEqual(before);
+    });
+  });
+
+  describe('ingestGames skips active game when live polling active', () => {
+    it('skips active game when lastAcceptedLiveSeq > 0', () => {
+      const { ingestGames, ingestGame, setActiveGame } = useGameStore.getState();
+
+      // Initial state: game 100 with score 0
+      ingestGames([makeRawGame(100)]);
+      setActiveGame(100);
+
+      // Live feed updates score to 5
+      ingestGame(makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 5 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      }), 500);
+
+      expect(useGameStore.getState().games['100'].homeScore).toBe(5);
+
+      // Schedule comes in with stale score of 2 — should be skipped
+      ingestGames([makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 2 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      })]);
+
+      expect(useGameStore.getState().games['100'].homeScore).toBe(5); // preserved
+    });
+
+    it('does not skip active game when lastAcceptedLiveSeq is 0', () => {
+      const { ingestGames, setActiveGame } = useGameStore.getState();
+
+      ingestGames([makeRawGame(100)]);
+      setActiveGame(100);
+
+      // No live feed has arrived yet (lastAcceptedLiveSeq = 0)
+      // Schedule should still update the active game
+      ingestGames([makeRawGame(100, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 3 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      })]);
+
+      expect(useGameStore.getState().games['100'].homeScore).toBe(3);
+    });
+
+    it('still updates non-active games normally', () => {
+      const { ingestGames, ingestGame, setActiveGame } = useGameStore.getState();
+
+      ingestGames([makeRawGame(100), makeRawGame(200)]);
+      setActiveGame(100);
+      ingestGame(makeRawGame(100), 500); // activate live seq
+
+      // Schedule updates game 200 — should work normally
+      ingestGames([makeRawGame(100), makeRawGame(200, {
+        teams: {
+          home: { team: { id: 1, name: 'Yankees', abbreviation: 'NYY' }, score: 7 },
+          away: { team: { id: 2, name: 'Red Sox', abbreviation: 'BOS' }, score: 0 },
+        },
+      })]);
+
+      expect(useGameStore.getState().games['200'].homeScore).toBe(7);
     });
   });
 });
