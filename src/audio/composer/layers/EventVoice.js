@@ -114,10 +114,34 @@ export class EventVoice {
     this.panner = null;
   }
 
-  // --- Private event handlers ---
+  // --- Private ---
+
+  /**
+   * Safe trigger for monophonic synths (AMSynth, FMSynth).
+   * Cancels pending scheduled notes to avoid "start time must be strictly greater"
+   * errors during rapid game switching.
+   */
+  _safeTrigger(synth, note, duration, time) {
+    try {
+      synth.triggerAttackRelease(note, duration, time);
+    } catch (_) {
+      // Synth had a pending note with a later start time — skip this trigger.
+      // This is expected during rapid game switching.
+    }
+  }
+
+  /** Cancel any in-flight notes on all monophonic synths. */
+  _cancelPending() {
+    try { this.arpeggioSynth?.triggerRelease(); } catch (_) {}
+    try { this.lowSynth?.triggerRelease(); } catch (_) {}
+    try { this.bellSynth?.triggerRelease(); } catch (_) {}
+  }
+
+  // --- Event handlers ---
 
   /** Ascending arpeggio through current chord. */
   _playRunScored(detail, harmony) {
+    this._cancelPending();
     const now = Tone.now();
     const { chordTones } = harmony;
     const count = Math.min(detail?.runs || 1, 4);
@@ -131,14 +155,8 @@ export class EventVoice {
     else if (detail?.team === 'away') this.setPan(0.3);
 
     tones.forEach((midi, i) => {
-      // AMSynth is monophonic — each note must start strictly after the previous.
-      // Space notes 0.18s apart with a short duration so they don't overlap.
       const noteStart = now + 0.05 + i * 0.18;
-      this.arpeggioSynth.triggerAttackRelease(
-        midiToNote(midi),
-        '16n',
-        noteStart,
-      );
+      this._safeTrigger(this.arpeggioSynth, midiToNote(midi), '16n', noteStart);
     });
 
     // Reset pan after gesture
@@ -147,52 +165,52 @@ export class EventVoice {
 
   /** Descending fifth-to-root on low voice. */
   _playOutRecorded(harmony) {
+    this._cancelPending();
     const now = Tone.now();
     const { chordTones } = harmony;
 
     // Find root and fifth in low range
     const lowTones = chordTones.filter(t => t >= 48 && t <= 60);
     if (lowTones.length >= 2) {
-      this.lowSynth.triggerAttackRelease(midiToNote(lowTones[1]), '8n', now);
-      this.lowSynth.triggerAttackRelease(midiToNote(lowTones[0]), '4n', now + 0.2);
+      this._safeTrigger(this.lowSynth, midiToNote(lowTones[1]), '8n', now + 0.01);
+      this._safeTrigger(this.lowSynth, midiToNote(lowTones[0]), '4n', now + 0.22);
     } else if (lowTones.length === 1) {
-      this.lowSynth.triggerAttackRelease(midiToNote(lowTones[0]), '4n', now);
+      this._safeTrigger(this.lowSynth, midiToNote(lowTones[0]), '4n', now + 0.01);
     }
   }
 
   /** Sustained perfect fifth on new root. */
   _playInningChange(harmony) {
+    this._cancelPending();
     const now = Tone.now();
     const { chordTones } = harmony;
 
     // Root and fifth (first two chord tones in low-mid range)
     const tones = chordTones.filter(t => t >= 55 && t <= 72);
     if (tones.length >= 2) {
-      this.bellSynth.triggerAttackRelease(midiToNote(tones[0]), '2n', now);
-      this.bellSynth.triggerAttackRelease(midiToNote(tones[1]), '2n', now + 0.05);
+      this._safeTrigger(this.bellSynth, midiToNote(tones[0]), '2n', now + 0.01);
+      this._safeTrigger(this.bellSynth, midiToNote(tones[1]), '2n', now + 0.06);
     } else if (tones.length === 1) {
-      this.bellSynth.triggerAttackRelease(midiToNote(tones[0]), '2n', now);
+      this._safeTrigger(this.bellSynth, midiToNote(tones[0]), '2n', now + 0.01);
     }
   }
 
   /** High bell tone — upper scale tone. */
   _playStrike(harmony) {
     const { scaleTones } = harmony;
-    // Pick from upper range
     const highTones = scaleTones.filter(t => t >= 72);
     const tone = highTones.length > 0
       ? highTones[Math.floor(Math.random() * highTones.length)]
       : scaleTones[scaleTones.length - 1];
 
     if (tone != null) {
-      this.bellSynth.triggerAttackRelease(midiToNote(tone), '16n');
+      this._safeTrigger(this.bellSynth, midiToNote(tone), '16n', Tone.now() + 0.01);
     }
   }
 
   /** Low non-chord scale tone (2nd or 6th degree). */
   _playBall(harmony) {
     const { scaleTones, chordTones } = harmony;
-    // Find scale tones that are NOT chord tones (passing tones)
     const chordSet = new Set(chordTones);
     const passingTones = scaleTones.filter(t => !chordSet.has(t) && t >= 48 && t <= 65);
 
@@ -201,23 +219,22 @@ export class EventVoice {
       : scaleTones[0];
 
     if (tone != null) {
-      this.lowSynth.triggerAttackRelease(midiToNote(tone), '16n');
+      this._safeTrigger(this.lowSynth, midiToNote(tone), '16n', Tone.now() + 0.01);
     }
   }
 
   /** Status change: fade in for Live, resolution for Final. */
   _playStatusChange(detail, harmony) {
+    this._cancelPending();
     const now = Tone.now();
 
     if (detail?.to === 'Final') {
-      // Resolution: descending through chord tones to root
       const { chordTones } = harmony;
       const tones = chordTones.filter(t => t >= 55 && t <= 72).slice(0, 3).reverse();
       tones.forEach((midi, i) => {
         const duration = i === tones.length - 1 ? '2n' : '8n';
-        this.bellSynth.triggerAttackRelease(midiToNote(midi), duration, now + i * 0.3);
+        this._safeTrigger(this.bellSynth, midiToNote(midi), duration, now + 0.05 + i * 0.3);
       });
     }
-    // statusChange→Live: handled by Composer (fades in all layers)
   }
 }
