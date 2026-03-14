@@ -13,6 +13,8 @@ body {
     overflow-x: hidden;
     background-color: #121212;
     color: #ffffff;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
   }
   
   
