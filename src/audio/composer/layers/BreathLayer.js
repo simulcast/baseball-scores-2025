@@ -1,30 +1,39 @@
 /**
- * BreathLayer: filtered pink noise with slow amplitude LFO.
- * Creates a subtle "breathing" atmosphere.
+ * BreathLayer: ambient texture — breath, tape hiss, and vinyl crackle.
  *
- * - Breathes more during silence (LFO depth increases)
- * - Recedes during active play (LFO depth decreases)
- * - Nearly subliminal (~3% volume)
+ * Three sub-voices:
+ * 1. Breath: filtered pink noise with slow LFO (the "breathing" pad)
+ * 2. Tape hiss: high-passed pink noise (constant, very quiet)
+ * 3. Vinyl crackle: white noise bursts through a narrow bandpass,
+ *    triggered at random intervals (2-6s) with random amplitude
+ *
+ * Together these create the "analog playback" texture that tells the
+ * listener's brain this isn't a digital source.
  *
  * Implements Layer contract: update, suspend, resume, dispose.
  */
 import * as Tone from 'tone';
 
-const BASE_VOLUME = 0.04;
-const LFO_MIN_FREQ = 0.08;  // ~12s period
-const LFO_MAX_FREQ = 0.125; // ~8s period
+const BREATH_VOLUME = 0.04;
+const HISS_VOLUME = 0.012;
+const CRACKLE_VOLUME = 0.02;
+const LFO_MIN_FREQ = 0.08;
+const LFO_MAX_FREQ = 0.125;
+const CRACKLE_MIN_INTERVAL = 2000; // ms
+const CRACKLE_MAX_INTERVAL = 6000;
 
 export class BreathLayer {
   constructor(output) {
     this.output = output;
     this.suspended = false;
+    this.disposed = false;
+    this._crackleTimer = null;
 
-    // Pink noise source
-    this.noise = new Tone.Noise('pink');
-    this.noise.volume.value = -30; // very quiet
+    // --- Voice 1: Breath (filtered pink noise with slow LFO) ---
+    this.breathNoise = new Tone.Noise('pink');
+    this.breathNoise.volume.value = -30;
 
-    // Auto filter with slow LFO for movement
-    this.filter = new Tone.AutoFilter({
+    this.breathFilter = new Tone.AutoFilter({
       frequency: LFO_MIN_FREQ,
       depth: 0.6,
       baseFrequency: 200,
@@ -32,58 +41,159 @@ export class BreathLayer {
       type: 'sine',
     });
 
-    // Volume envelope
-    this.gain = new Tone.Gain(BASE_VOLUME);
+    this.breathGain = new Tone.Gain(BREATH_VOLUME);
 
-    // Wire: noise → autoFilter → gain → output
-    this.noise.connect(this.filter);
-    this.filter.connect(this.gain);
-    this.gain.connect(output);
+    this.breathNoise.connect(this.breathFilter);
+    this.breathFilter.connect(this.breathGain);
+    this.breathGain.connect(output);
 
-    // Start noise and filter LFO
-    this.noise.start();
-    this.filter.start();
+    this.breathNoise.start();
+    this.breathFilter.start();
+
+    // --- Voice 2: Tape hiss (high-passed pink noise, constant) ---
+    this.hissNoise = new Tone.Noise('pink');
+    this.hissNoise.volume.value = -28;
+
+    // High-pass at 3kHz — only the "sss" frequencies of tape
+    this.hissFilter = new Tone.Filter({
+      frequency: 3000,
+      type: 'highpass',
+      rolloff: -12,
+    });
+
+    this.hissGain = new Tone.Gain(HISS_VOLUME);
+
+    this.hissNoise.connect(this.hissFilter);
+    this.hissFilter.connect(this.hissGain);
+    this.hissGain.connect(output);
+
+    this.hissNoise.start();
+
+    // --- Voice 3: Vinyl crackle (random white noise bursts) ---
+    this.crackleNoise = new Tone.Noise('white');
+    this.crackleNoise.volume.value = -20;
+
+    // Narrow bandpass centered at 4kHz — the "tick" frequency of dust
+    this.crackleFilter = new Tone.Filter({
+      frequency: 4000,
+      type: 'bandpass',
+      Q: 3,
+    });
+
+    this.crackleGain = new Tone.Gain(0); // silent by default, bursts on
+
+    this.crackleNoise.connect(this.crackleFilter);
+    this.crackleFilter.connect(this.crackleGain);
+    this.crackleGain.connect(output);
+
+    this.crackleNoise.start();
+    this._scheduleCrackle();
   }
 
   /**
-   * Update brightness — controls LFO depth and filter behavior.
+   * Update brightness — controls breath LFO behavior.
    * Low brightness (quiet periods) = more breathing.
    * High brightness (active play) = less breathing, recedes.
    */
   update(harmonyState) {
-    if (this.suspended || !this.filter) return;
+    if (this.suspended || !this.breathFilter) return;
 
     const brightness = harmonyState?.brightness ?? 0;
 
-    // More breathing during silence, less during activity
-    this.filter.depth.value = 0.3 + (1 - brightness) * 0.5;
+    this.breathFilter.depth.value = 0.3 + (1 - brightness) * 0.5;
+    this.breathFilter.frequency.value =
+      LFO_MIN_FREQ + (1 - brightness) * (LFO_MAX_FREQ - LFO_MIN_FREQ);
 
-    // Slightly faster breathing during silence
-    this.filter.frequency.value = LFO_MIN_FREQ + (1 - brightness) * (LFO_MAX_FREQ - LFO_MIN_FREQ);
-
-    // Fade down during high activity (other layers carry the sound)
-    const targetGain = BASE_VOLUME * (1 - brightness * 0.6);
-    this.gain.gain.rampTo(targetGain, 2);
+    const targetGain = BREATH_VOLUME * (1 - brightness * 0.6);
+    this.breathGain.gain.rampTo(targetGain, 2);
   }
 
   suspend() {
     this.suspended = true;
-    this.noise?.stop();
+    this.breathNoise?.stop();
+    this.hissNoise?.stop();
+    this.crackleNoise?.stop();
+    this._clearCrackle();
   }
 
   resume() {
     this.suspended = false;
-    this.noise?.start();
+    this.breathNoise?.start();
+    this.hissNoise?.start();
+    this.crackleNoise?.start();
+    this._scheduleCrackle();
   }
 
   dispose() {
     this.suspended = true;
-    this.noise?.stop();
-    this.noise?.dispose();
-    this.filter?.dispose();
-    this.gain?.dispose();
-    this.noise = null;
-    this.filter = null;
-    this.gain = null;
+    this.disposed = true;
+    this._clearCrackle();
+
+    this.breathNoise?.stop();
+    this.breathNoise?.dispose();
+    this.breathFilter?.dispose();
+    this.breathGain?.dispose();
+
+    this.hissNoise?.stop();
+    this.hissNoise?.dispose();
+    this.hissFilter?.dispose();
+    this.hissGain?.dispose();
+
+    this.crackleNoise?.stop();
+    this.crackleNoise?.dispose();
+    this.crackleFilter?.dispose();
+    this.crackleGain?.dispose();
+
+    this.breathNoise = null;
+    this.breathFilter = null;
+    this.breathGain = null;
+    this.hissNoise = null;
+    this.hissFilter = null;
+    this.hissGain = null;
+    this.crackleNoise = null;
+    this.crackleFilter = null;
+    this.crackleGain = null;
+  }
+
+  // --- Private: crackle scheduling ---
+
+  /** Schedule the next random crackle burst. */
+  _scheduleCrackle() {
+    if (this.suspended || this.disposed) return;
+
+    const delay = CRACKLE_MIN_INTERVAL +
+      Math.random() * (CRACKLE_MAX_INTERVAL - CRACKLE_MIN_INTERVAL);
+
+    this._crackleTimer = setTimeout(() => this._fireCrackle(), delay);
+  }
+
+  /** Fire a single crackle: quick gain burst then silence. */
+  _fireCrackle() {
+    if (this.suspended || this.disposed || !this.crackleGain) return;
+
+    // Random amplitude for natural variation
+    const amplitude = CRACKLE_VOLUME * (0.3 + Math.random() * 0.7);
+    const now = Tone.now();
+
+    // Very short burst: 5-15ms
+    this.crackleGain.gain.setValueAtTime(amplitude, now);
+    this.crackleGain.gain.setValueAtTime(0, now + 0.005 + Math.random() * 0.01);
+
+    // Sometimes fire a second click 20-50ms later (double crackle)
+    if (Math.random() < 0.3) {
+      const secondAmp = amplitude * (0.3 + Math.random() * 0.4);
+      const secondTime = now + 0.02 + Math.random() * 0.03;
+      this.crackleGain.gain.setValueAtTime(secondAmp, secondTime);
+      this.crackleGain.gain.setValueAtTime(0, secondTime + 0.005 + Math.random() * 0.008);
+    }
+
+    this._scheduleCrackle();
+  }
+
+  _clearCrackle() {
+    if (this._crackleTimer) {
+      clearTimeout(this._crackleTimer);
+      this._crackleTimer = null;
+    }
   }
 }
