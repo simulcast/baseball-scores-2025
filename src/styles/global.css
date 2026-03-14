@@ -1,3 +1,9 @@
+/* Diamond / runner indicator colors */
+:root {
+  --runner-on: #fff;
+  --runner-off: rgba(255, 255, 255, 0.3);
+}
+
 /* Global CSS styles */
 body {
     margin: 0;
@@ -9,15 +15,6 @@ body {
     color: #ffffff;
   }
   
-  /* Baseball field colors */
-  .baseball-field {
-    --grass-color: #365314;
-    --infield-color: #a16207;
-    --base-color: #f8fafc;
-    --base-outline: #0f172a;
-    --home-plate-color: #f8fafc;
-    --runner-color: #dc2626;
-  }
   
   /* Pulse animation for active elements */
   @keyframes pulse {
