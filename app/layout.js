@@ -1,13 +1,30 @@
 import ThemeRegistry from '../src/components/ThemeRegistry';
 import '../src/styles/global.css';
 
+const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : 'http://localhost:3000';
+
 export const metadata = {
-  title: 'Baseball Scores',
-  description: 'Baseball Scores - Live baseball game scores and updates',
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: 'Baseball Scores',
+    template: '%s',
+  },
+  description: 'Live MLB baseball scores with generative ambient music.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
-    apple: '/logo192.png',
+    icon: '/favicon.svg',
+  },
+  openGraph: {
+    siteName: 'Baseball Scores',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
   },
 };
 
@@ -15,7 +32,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#1a2f16" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

@@ -9,6 +9,7 @@ import {
   Divider
 } from '@mui/material';
 import { format } from 'date-fns';
+import { formatInning } from '../utils/formatGameDisplay';
 
 const cardStyles = {
   common: {
@@ -115,10 +116,7 @@ const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
 
   const gameTime = game.gameDate ? format(new Date(game.gameDate), 'h:mm a') : '';
 
-  const inningInfo = game.inningState &&
-    (game.inningState.startsWith('Mid') || game.inningState.startsWith('End'))
-      ? `${game.inningState} ${game.inning}`
-      : `${game.isTopInning ? 'Top' : 'Bottom'} ${game.inning}`;
+  const inningInfo = formatInning(game);
 
   let sx = { ...cardStyles.common };
   if (isLive) sx = { ...sx, ...cardStyles.live };
