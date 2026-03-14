@@ -1,16 +1,15 @@
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Box, 
-  Grid, 
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Grid,
   Chip,
   Divider
 } from '@mui/material';
 import { format } from 'date-fns';
 
-// Card style constants
 const cardStyles = {
   common: {
     height: '100%',
@@ -38,303 +37,103 @@ const cardStyles = {
   }
 };
 
-// Game status subcomponent
-const GameStatus = ({ isPreGame, isInProgress, gameTime, inningInfo }) => (
-  <Box 
-    sx={{ 
-      display: 'flex', 
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      mb: 2
-    }}
-  >
-    <Chip 
-      label={isPreGame ? gameTime : isInProgress ? inningInfo : 'Final'} 
-      color={isPreGame ? 'default' : isInProgress ? 'secondary' : 'primary'}
+const GameStatus = ({ isPreGame, isLive, gameTime, inningInfo }) => (
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+    <Chip
+      label={isPreGame ? gameTime : isLive ? inningInfo : 'Final'}
+      color={isPreGame ? 'default' : isLive ? 'secondary' : 'primary'}
       size="small"
-      sx={{ 
-        fontWeight: 'bold', 
-        filter: 'none',
-      }}
+      sx={{ fontWeight: 'bold', filter: 'none' }}
     />
   </Box>
 );
 
-// Team row subcomponent
-const TeamRow = ({ teamName, score, isInProgress }) => (
+const TeamRow = ({ teamName, score, isLive }) => (
   <>
     <Grid item xs={8}>
-      <Typography 
-        variant="body1" 
-        component="div" 
-        fontWeight="medium" 
-        noWrap
-        color={isInProgress ? 'text.primary' : 'text.secondary'}
-      >
+      <Typography variant="body1" component="div" fontWeight="medium" noWrap
+        color={isLive ? 'text.primary' : 'text.secondary'}>
         {teamName}
       </Typography>
     </Grid>
     <Grid item xs={4}>
-      <Typography 
-        variant="h6" 
-        component="div" 
-        align="right" 
-        fontWeight="bold"
-        color={isInProgress ? 'text.primary' : 'text.secondary'}
-      >
+      <Typography variant="h6" component="div" align="right" fontWeight="bold"
+        color={isLive ? 'text.primary' : 'text.secondary'}>
         {score}
       </Typography>
     </Grid>
   </>
 );
 
-// Count indicator subcomponent
 const CountIndicator = ({ count, total, label }) => (
-  <Box sx={{ 
-    display: 'flex', 
-    flexDirection: 'column', 
-    alignItems: 'center', 
-    mx: 1,
-    height: '45px', // Fixed height to match the BaseballDiamond
-    justifyContent: 'flex-start'
-  }}>
-    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-      {label}
-    </Typography>
-    <Box sx={{ 
-      display: 'flex', 
-      gap: '2px', 
-      mt: 0.5,
-      alignItems: 'center',
-      height: '32px' // Match the diamond height
-    }}>
-      {[...Array(total)].map((_, index) => (
-        <Box
-          key={index}
-          sx={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: index < count ? '#fff' : 'rgba(255,255,255,0.3)',
-          }}
-        />
+  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mx: 1, height: '45px', justifyContent: 'flex-start' }}>
+    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>{label}</Typography>
+    <Box sx={{ display: 'flex', gap: '2px', mt: 0.5, alignItems: 'center', height: '32px' }}>
+      {[...Array(total)].map((_, i) => (
+        <Box key={i} sx={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: i < count ? '#fff' : 'rgba(255,255,255,0.3)' }} />
       ))}
     </Box>
   </Box>
 );
 
-// Baseball diamond with runners
 const BaseballDiamond = ({ runners = [] }) => {
-  // Runners array should be [first, second, third]
-  const firstBase = runners[0] || false;
-  const secondBase = runners[1] || false;
-  const thirdBase = runners[2] || false;
-
-  // Base size and spacing constants for consistent positioning
-  const baseSize = 10; // Width and height of each base in pixels
-  const baseOffset = 4; // Standard offset from edges in pixels
-  const baseStyles = {
-    width: `${baseSize}px`,
-    height: `${baseSize}px`,
-    position: 'absolute',
-  };
+  const baseSize = 10;
+  const baseOffset = 4;
+  const baseStyles = { width: `${baseSize}px`, height: `${baseSize}px`, position: 'absolute' };
 
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center',
-        mx: 1,
-        height: '45px', // Fixed height to match CountIndicator
-        justifyContent: 'flex-start'
-      }}
-    >
-      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-        RUNNERS ON
-      </Typography>
-      <Box 
-        sx={{ 
-          position: 'relative',
-          width: '32px',
-          height: '32px',
-          transform: 'rotate(-45deg)',
-          mt: 0.5,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}
-      >
-        {/* Third Base (Top Left) */}
-        <Box 
-          sx={{ 
-            ...baseStyles,
-            top: `${baseOffset}px`,
-            left: `${baseOffset}px`,
-            backgroundColor: thirdBase ? '#fff' : 'rgba(255,255,255,0.3)',
-          }}
-        />
-        
-        {/* Second Base (Top Right) */}
-        <Box 
-          sx={{ 
-            ...baseStyles,
-            top: `${baseOffset}px`,
-            right: `${baseOffset}px`,
-            backgroundColor: secondBase ? '#fff' : 'rgba(255,255,255,0.3)',
-          }}
-        />
-        
-        {/* First Base (Bottom Right) */}
-        <Box 
-          sx={{ 
-            ...baseStyles,
-            bottom: '-2.5px',
-            right: `${baseOffset}px`,
-            backgroundColor: firstBase ? '#fff' : 'rgba(255,255,255,0.3)',
-          }}
-        />
-        
-        {/* Home Plate (Bottom Left - always empty) */}
-        <Box 
-          sx={{ 
-            ...baseStyles,
-            bottom: `${baseOffset}px`,
-            left: `${baseOffset}px`,
-            backgroundColor: 'transparent',
-          }}
-        />
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mx: 1, height: '45px', justifyContent: 'flex-start' }}>
+      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>RUNNERS ON</Typography>
+      <Box sx={{ position: 'relative', width: '32px', height: '32px', transform: 'rotate(-45deg)', mt: 0.5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Box sx={{ ...baseStyles, top: `${baseOffset}px`, left: `${baseOffset}px`, backgroundColor: runners[2] ? '#fff' : 'rgba(255,255,255,0.3)' }} />
+        <Box sx={{ ...baseStyles, top: `${baseOffset}px`, right: `${baseOffset}px`, backgroundColor: runners[1] ? '#fff' : 'rgba(255,255,255,0.3)' }} />
+        <Box sx={{ ...baseStyles, bottom: '-2.5px', right: `${baseOffset}px`, backgroundColor: runners[0] ? '#fff' : 'rgba(255,255,255,0.3)' }} />
+        <Box sx={{ ...baseStyles, bottom: `${baseOffset}px`, left: `${baseOffset}px`, backgroundColor: 'transparent' }} />
       </Box>
     </Box>
   );
 };
 
-/**
- * Game card component for the dashboard
- *
- * @param {Object} props Component props
- * @param {Object} props.game Game data from the API
- * @param {Object} props.gameState Detailed game state data from the store
- * @param {boolean} props.isSelected Whether this game is currently selected
- * @param {Function} props.onSelect Callback for when the game is clicked
- * @returns {JSX.Element} Game card component
- */
-const GameCard = ({
-  game,
-  gameState,
-  isSelected = false,
-  onSelect = () => {},
-}) => {
-  // Extract game data
-  const {
-    status,
-    teams,
-    linescore: baseLinescoreData,
-    gameDate
-  } = game;
+const GameCard = ({ game, isSelected = false, onSelect = () => {} }) => {
+  const isPreGame = game.status === 'Preview';
+  const isLive = game.status === 'Live';
 
-  // Determine game status
-  const isPreGame = status.abstractGameState === 'Preview';
-  const isInProgress = status.abstractGameState === 'Live';
+  const gameTime = game.gameDate ? format(new Date(game.gameDate), 'h:mm a') : '';
 
-  // Format game time
-  const gameTime = gameDate ? format(new Date(gameDate), 'h:mm a', { timeZone: 'local' }) : '';
+  const inningInfo = game.inningState &&
+    (game.inningState.startsWith('Mid') || game.inningState.startsWith('End'))
+      ? `${game.inningState} ${game.inning}`
+      : `${game.isTopInning ? 'Top' : 'Bottom'} ${game.inning}`;
 
-  // Use gameState data if available (should be available for all live games)
-  // Fall back to basic linescore data if needed
-  
-  // Get current inning - respect special inning states like "Mid" and "End"
-  const inningInfo = gameState ? 
-    (gameState.inningState && 
-     (gameState.inningState.startsWith('Mid') || gameState.inningState.startsWith('End')) ? 
-      `${gameState.inningState} ${gameState.inning}` : 
-      `${gameState.isTopInning ? 'Top' : 'Bottom'} ${gameState.inning}`) : 
-    (baseLinescoreData?.currentInning ? 
-      `${baseLinescoreData.inningState} ${baseLinescoreData.currentInning}` : 
-      '');
+  let sx = { ...cardStyles.common };
+  if (isLive) sx = { ...sx, ...cardStyles.live };
+  else sx = { ...sx, ...cardStyles.static };
+  if (isSelected) sx = { ...sx, ...cardStyles.selected };
 
-  // Get scores
-  const homeScore = gameState ? gameState.homeScore : (teams.home.score || 0);
-  const awayScore = gameState ? gameState.awayScore : (teams.away.score || 0);
-
-  // Get counts
-  const balls = gameState ? gameState.balls : (baseLinescoreData?.balls || 0);
-  const strikes = gameState ? gameState.strikes : (baseLinescoreData?.strikes || 0);
-  const outs = gameState ? gameState.outs : (baseLinescoreData?.outs || 0);
-  
-  // Get runners
-  const runnersOnBase = gameState ? gameState.runners : [
-    baseLinescoreData?.offense?.first?.id !== undefined,
-    baseLinescoreData?.offense?.second?.id !== undefined,
-    baseLinescoreData?.offense?.third?.id !== undefined
-  ];
-
-  // Card content
-  const cardContent = (
-    <CardContent sx={{ flexGrow: 1 }}>
-      {/* Game status */}
-      <GameStatus 
-        isPreGame={isPreGame}
-        isInProgress={isInProgress}
-        gameTime={gameTime}
-        inningInfo={inningInfo}
-      />
-
-      {/* Teams and scores */}
-      <Grid container spacing={1} alignItems="center">
-        {/* Away team */}
-        <TeamRow 
-          teamName={teams.away.team.name}
-          score={awayScore}
-          isInProgress={isInProgress}
-        />
-
-        {/* Home team */}
-        <TeamRow 
-          teamName={teams.home.team.name}
-          score={homeScore}
-          isInProgress={isInProgress}
-        />
-      </Grid>
-
-      {/* Count indicators and diamond (only for in-progress games) */}
-      {isInProgress && (
-        <>
-          <Divider sx={{ my: 1.5, borderColor: 'rgba(255,255,255,0.2)' }} />
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-            <BaseballDiamond runners={runnersOnBase} />
-            <CountIndicator count={balls} total={4} label="BALLS" />
-            <CountIndicator count={strikes} total={3} label="STRIKES" />
-            <CountIndicator count={outs} total={3} label="OUTS" />
-          </Box>
-        </>
-      )}
-    </CardContent>
-  );
-
-  // Compute final card styles
-  let finalStyles = { ...cardStyles.common };
-  
-  if (isInProgress) {
-    finalStyles = { ...finalStyles, ...cardStyles.live };
-  } else {
-    finalStyles = { ...finalStyles, ...cardStyles.static };
-  }
-  
-  if (isSelected) {
-    finalStyles = { ...finalStyles, ...cardStyles.selected };
-  }
-  
-  // No pulsing animation for events
-
-  // Render card
   return (
-    <Card 
-      onClick={isInProgress ? onSelect : undefined}
-      sx={finalStyles}
-      className={isSelected ? 'selected-card' : isInProgress ? '' : 'static-card'}
+    <Card
+      onClick={isLive ? onSelect : undefined}
+      sx={sx}
+      className={isSelected ? 'selected-card' : isLive ? '' : 'static-card'}
     >
-      {cardContent}
+      <CardContent sx={{ flexGrow: 1 }}>
+        <GameStatus isPreGame={isPreGame} isLive={isLive} gameTime={gameTime} inningInfo={inningInfo} />
+        <Grid container spacing={1} alignItems="center">
+          <TeamRow teamName={game.awayTeam.name} score={game.awayScore} isLive={isLive} />
+          <TeamRow teamName={game.homeTeam.name} score={game.homeScore} isLive={isLive} />
+        </Grid>
+        {isLive && (
+          <>
+            <Divider sx={{ my: 1.5, borderColor: 'rgba(255,255,255,0.2)' }} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+              <BaseballDiamond runners={game.runners} />
+              <CountIndicator count={game.balls} total={4} label="BALLS" />
+              <CountIndicator count={game.strikes} total={3} label="STRIKES" />
+              <CountIndicator count={game.outs} total={3} label="OUTS" />
+            </Box>
+          </>
+        )}
+      </CardContent>
     </Card>
   );
 };
