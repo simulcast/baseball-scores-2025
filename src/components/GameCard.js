@@ -27,6 +27,10 @@ const cardStyles = {
     '&:hover': {
       borderColor: 'white',
       filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.45))',
+      '@media (max-width: 600px)': {
+        filter: 'none',
+        boxShadow: '15px 10px 5px rgba(255, 255, 255, 0.45)',
+      },
     }
   },
   static: {
@@ -34,6 +38,10 @@ const cardStyles = {
   },
   selected: {
     filter: 'drop-shadow(15px 10px 5px rgba(255, 255, 255, 0.8)) !important',
+    '@media (max-width: 600px)': {
+      filter: 'none !important',
+      boxShadow: '15px 10px 5px rgba(255, 255, 255, 0.8) !important',
+    },
   }
 };
 
