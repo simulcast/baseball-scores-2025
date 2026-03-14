@@ -147,6 +147,43 @@ describe('Composer', () => {
     expect(composer.padLayer.crossfadeTo).not.toHaveBeenCalled();
   });
 
+  // --- Game deselection ---
+
+  test('suspends all layers when game becomes null', () => {
+    composer.update(makeGame(), []);
+    composer.update(null, []);
+
+    expect(composer.padLayer.suspend).toHaveBeenCalled();
+    expect(composer.breathLayer.suspend).toHaveBeenCalled();
+    expect(composer.eventVoice.suspend).toHaveBeenCalled();
+    expect(composer.pulseManager.suspend).toHaveBeenCalled();
+  });
+
+  test('stops pulse pools when game becomes null', () => {
+    composer.update(makeGame({ runners: [true, false, false] }), []);
+    composer.update(null, []);
+
+    expect(composer.pulseManager.stopAll).toHaveBeenCalled();
+  });
+
+  test('resumes layers when game is reselected after null', () => {
+    composer.update(makeGame(), []);
+    composer.update(null, []);
+    composer.update(makeGame(), []);
+
+    expect(composer.padLayer.resume).toHaveBeenCalled();
+    expect(composer.breathLayer.resume).toHaveBeenCalled();
+  });
+
+  test('resets team key on deselection so next game is fresh', () => {
+    const game1 = makeGame({ homeTeam: { id: 147 }, awayTeam: { id: 111 } });
+    composer.update(game1, []);
+    composer.update(null, []);
+    // Same game reselected — should NOT trigger crossfade (prevTeamKey was reset)
+    composer.update(game1, []);
+    expect(composer.padLayer.crossfadeTo).not.toHaveBeenCalled();
+  });
+
   // --- Dispose guard ---
 
   test('update does nothing after dispose', () => {

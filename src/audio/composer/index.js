@@ -31,6 +31,7 @@ export class Composer {
   constructor(masterGain) {
     this.disposed = false;
     this.suspended = false;
+    this._inactive = false; // true when no game is selected
     this.currentHarmony = null;
     this.prevTeamKey = null; // "homeId:awayId" for detecting game switches
     this.crossfadeInProgress = false;
@@ -59,6 +60,17 @@ export class Composer {
    */
   update(game, events) {
     if (this.disposed) return;
+
+    // Game deselected — silence everything
+    if (!game) {
+      this._deactivate();
+      return;
+    }
+
+    // Game selected after being deselected — reactivate
+    if (this._inactive) {
+      this._activate();
+    }
 
     // Track brightness
     if (events && events.length > 0) {
@@ -192,5 +204,28 @@ export class Composer {
   _fadeInAllLayers() {
     // Layers will fade in naturally through their update() calls
     // This is a placeholder for any special fade-in orchestration
+  }
+
+  /** Silence all layers when no game is selected. */
+  _deactivate() {
+    if (this._inactive) return;
+    this._inactive = true;
+    this.pulseManager?.stopAll();
+    this.padLayer?.suspend();
+    this.breathLayer?.suspend();
+    this.eventVoice?.suspend();
+    this.pulseManager?.suspend();
+    Tone.getTransport().pause();
+    this.prevTeamKey = null;
+  }
+
+  /** Reactivate layers when a game is selected after deselection. */
+  _activate() {
+    this._inactive = false;
+    Tone.getTransport().start();
+    this.padLayer?.resume();
+    this.breathLayer?.resume();
+    this.eventVoice?.resume();
+    this.pulseManager?.resume();
   }
 }
