@@ -1,36 +1,35 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { fetchGames } from '../services/api';
 import { useGameStore } from '../store/gameStore';
 
 export function useGamePolling({ interval = 5000 } = {}) {
   const ingestGames = useGameStore((s) => s.ingestGames);
-  const inFlightRef = useRef(false);
+  const setPollError = useGameStore((s) => s.setPollError);
 
   useEffect(() => {
-    let timer;
     let mounted = true;
+    let timer;
 
     async function poll() {
-      if (inFlightRef.current) return;
-      inFlightRef.current = true;
+      const seq = Date.now();
       try {
         const games = await fetchGames();
-        if (mounted) ingestGames(games);
+        if (mounted) ingestGames(games, seq);
       } catch (err) {
         console.error('[useGamePolling]', err);
+        if (mounted) setPollError(err.message);
       } finally {
-        inFlightRef.current = false;
+        if (mounted) timer = setTimeout(poll, interval);
       }
     }
 
     poll();
-    timer = setInterval(poll, interval);
 
     return () => {
       mounted = false;
-      clearInterval(timer);
+      clearTimeout(timer);
     };
-  }, [interval, ingestGames]);
+  }, [interval, ingestGames, setPollError]);
 }
 
 export default useGamePolling;
