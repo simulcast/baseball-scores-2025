@@ -29,3 +29,7 @@ export function setMasterVolume(v) {
 export function isConnected() {
   return engine?.isConnected() ?? false;
 }
+
+export async function ensureRunning() {
+  return engine?.ensureRunning();
+}

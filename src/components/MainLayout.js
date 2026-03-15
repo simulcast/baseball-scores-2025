@@ -28,6 +28,17 @@ const MainLayout = ({ gameId }) => {
     return () => window.removeEventListener('beforeunload', cleanup);
   }, []);
 
+  // Resume AudioContext when returning from background (iOS suspends it)
+  useEffect(() => {
+    const handleVisibility = async () => {
+      if (document.visibilityState === 'visible' && audio.isConnected()) {
+        try { await audio.ensureRunning(); } catch (_) {}
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   // Sync URL gameId with store
   useEffect(() => {
     setActiveGame(gameId || null);
@@ -39,8 +50,14 @@ const MainLayout = ({ gameId }) => {
     if (games[id]?.status !== 'Live') return;
 
     // Connect audio on first interaction (user gesture satisfies AudioContext requirement)
-    if (!audio.isConnected()) {
-      await audio.connect(useGameStore);
+    // ensureRunning() resumes the context if iOS suspended it in the background
+    try {
+      if (!audio.isConnected()) {
+        await audio.connect(useGameStore);
+      }
+      await audio.ensureRunning();
+    } catch (err) {
+      console.warn('Audio failed to start:', err);
     }
 
     if (activeGameId === String(id)) {

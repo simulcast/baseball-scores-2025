@@ -100,4 +100,12 @@ export class AudioEngine {
   isConnected() {
     return this.connected;
   }
+
+  async ensureRunning() {
+    if (!this.connected) return;
+    const ctx = Tone.getContext().rawContext;
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+  }
 }
