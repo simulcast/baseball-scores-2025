@@ -32,6 +32,8 @@ const MainLayout = ({ gameId }) => {
   useEffect(() => {
     const handleVisibility = async () => {
       if (document.visibilityState === 'visible' && audio.isConnected()) {
+        // Small delay — iOS Safari needs a moment before AudioContext.resume() succeeds
+        await new Promise(r => setTimeout(r, 100));
         try { await audio.ensureRunning(); } catch (_) {}
       }
     };

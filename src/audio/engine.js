@@ -1,6 +1,7 @@
 import * as Tone from 'tone';
 import { diffGameEvents } from './diffGameEvents';
 import { Composer } from './composer';
+import { startKeepAlive, stopKeepAlive, updateMediaSession, ensureKeepAlive } from './keepAlive';
 
 let instance = null;
 
@@ -28,6 +29,14 @@ export class AudioEngine {
       this.composer = new Composer(this.masterGain);
       this.connected = true;
 
+      // Best-effort: silent audio keep-alive + Media Session + Wake Lock
+      try {
+        await startKeepAlive({
+          onPlay: () => this.resume(),
+          onPause: () => this.pause(),
+        });
+      } catch (_) { /* keep-alive is optional */ }
+
       // Snapshot initial active game
       const state = store.getState();
       this.prevGame = state.activeGameId
@@ -44,6 +53,14 @@ export class AudioEngine {
           const events = diffGameEvents(this.prevGame, nextGame);
           this.composer.update(nextGame, events);
           this.prevGame = nextGame;
+
+          // Update lock screen metadata with current matchup
+          if (nextGame) {
+            updateMediaSession({
+              title: `${nextGame.awayTeam.abbreviation} @ ${nextGame.homeTeam.abbreviation}`,
+              artist: 'Baseball Scores',
+            });
+          }
         }
       });
     } catch (err) {
@@ -72,6 +89,7 @@ export class AudioEngine {
     this.prevGame = null;
     this._paused = false;
     instance = null;
+    stopKeepAlive();
   }
 
   pause() {
@@ -79,6 +97,7 @@ export class AudioEngine {
       this._paused = true;
       this.masterGain.gain.value = 0;
       this.composer?.suspend();
+      updateMediaSession({ isPlaying: false });
     }
   }
 
@@ -87,6 +106,7 @@ export class AudioEngine {
       this._paused = false;
       this.masterGain.gain.value = this._volume;
       this.composer?.resume();
+      updateMediaSession({ isPlaying: true });
     }
   }
 
@@ -107,5 +127,6 @@ export class AudioEngine {
     if (ctx.state === 'suspended') {
       await ctx.resume();
     }
+    await ensureKeepAlive();
   }
 }

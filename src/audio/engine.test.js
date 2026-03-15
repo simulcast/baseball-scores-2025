@@ -25,8 +25,17 @@ jest.mock('./composer', () => ({
   })),
 }));
 
+// Mock keepAlive
+jest.mock('./keepAlive', () => ({
+  startKeepAlive: jest.fn().mockResolvedValue(undefined),
+  stopKeepAlive: jest.fn(),
+  updateMediaSession: jest.fn(),
+  ensureKeepAlive: jest.fn().mockResolvedValue(undefined),
+}));
+
 const Tone = require('tone');
 const { Composer } = require('./composer');
+const { startKeepAlive, stopKeepAlive, updateMediaSession, ensureKeepAlive } = require('./keepAlive');
 
 describe('AudioEngine', () => {
   let engine;
@@ -187,5 +196,79 @@ describe('AudioEngine', () => {
   test('ensureRunning is a no-op when not connected', async () => {
     await engine.ensureRunning(); // should not throw
     expect(Tone.getContext).not.toHaveBeenCalled();
+  });
+
+  // --- Keep-alive integration ---
+
+  test('connect calls startKeepAlive with play/pause callbacks', async () => {
+    const store = createMockStore({ activeGameId: null, games: {} });
+    await engine.connect(store);
+
+    expect(startKeepAlive).toHaveBeenCalledWith({
+      onPlay: expect.any(Function),
+      onPause: expect.any(Function),
+    });
+  });
+
+  test('disconnect calls stopKeepAlive', async () => {
+    const store = createMockStore({ activeGameId: null, games: {} });
+    await engine.connect(store);
+
+    engine.disconnect();
+
+    expect(stopKeepAlive).toHaveBeenCalled();
+  });
+
+  test('ensureRunning calls ensureKeepAlive', async () => {
+    const store = createMockStore({ activeGameId: null, games: {} });
+    await engine.connect(store);
+
+    await engine.ensureRunning();
+
+    expect(ensureKeepAlive).toHaveBeenCalled();
+  });
+
+  test('pause updates media session playback state', async () => {
+    const store = createMockStore({ activeGameId: null, games: {} });
+    await engine.connect(store);
+
+    engine.pause();
+
+    expect(updateMediaSession).toHaveBeenCalledWith({ isPlaying: false });
+  });
+
+  test('resume updates media session playback state', async () => {
+    const store = createMockStore({ activeGameId: null, games: {} });
+    await engine.connect(store);
+
+    engine.pause();
+    engine.resume();
+
+    expect(updateMediaSession).toHaveBeenCalledWith({ isPlaying: true });
+  });
+
+  test('updates media session with team names on game change', async () => {
+    const game1 = makeGame({ homeScore: 0 });
+    const game2 = makeGame({ homeScore: 1 });
+
+    const store = createMockStore({ activeGameId: '1', games: { '1': game1 } });
+    await engine.connect(store);
+
+    updateMediaSession.mockClear();
+    store.setState({ games: { '1': game2 } });
+
+    expect(updateMediaSession).toHaveBeenCalledWith({
+      title: 'BOS @ NYY',
+      artist: 'Baseball Scores',
+    });
+  });
+
+  test('connect succeeds even if startKeepAlive throws', async () => {
+    startKeepAlive.mockRejectedValueOnce(new Error('keep-alive failed'));
+
+    const store = createMockStore({ activeGameId: null, games: {} });
+    await engine.connect(store);
+
+    expect(engine.isConnected()).toBe(true);
   });
 });
