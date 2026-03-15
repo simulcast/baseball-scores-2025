@@ -10,7 +10,7 @@ jest.mock('tone', () => ({
     dispose: jest.fn(),
   })),
   getContext: jest.fn(() => ({
-    rawContext: { close: jest.fn() },
+    rawContext: { close: jest.fn(), state: 'running', resume: jest.fn().mockResolvedValue(undefined) },
   })),
   now: jest.fn(() => 0),
 }));
@@ -158,5 +158,34 @@ describe('AudioEngine', () => {
 
     engine.setMasterVolume(0.5);
     expect(engine.masterGain.gain.value).toBe(0.5);
+  });
+
+  // --- ensureRunning ---
+
+  test('ensureRunning does not call resume when context is running', async () => {
+    const mockResume = jest.fn();
+    Tone.getContext.mockReturnValue({ rawContext: { state: 'running', resume: mockResume, close: jest.fn() } });
+
+    const store = createMockStore({ activeGameId: null, games: {} });
+    await engine.connect(store);
+
+    await engine.ensureRunning();
+    expect(mockResume).not.toHaveBeenCalled();
+  });
+
+  test('ensureRunning calls resume when context is suspended', async () => {
+    const store = createMockStore({ activeGameId: null, games: {} });
+    await engine.connect(store);
+
+    const mockCtx = { state: 'suspended', resume: jest.fn().mockResolvedValue(undefined), close: jest.fn() };
+    Tone.getContext.mockReturnValue({ rawContext: mockCtx });
+
+    await engine.ensureRunning();
+    expect(mockCtx.resume).toHaveBeenCalled();
+  });
+
+  test('ensureRunning is a no-op when not connected', async () => {
+    await engine.ensureRunning(); // should not throw
+    expect(Tone.getContext).not.toHaveBeenCalled();
   });
 });
