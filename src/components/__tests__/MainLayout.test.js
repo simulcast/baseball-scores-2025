@@ -105,28 +105,37 @@ describe('MainLayout audio integration', () => {
   });
 
   test('visibilitychange resumes audio when connected', async () => {
+    jest.useFakeTimers();
     audio.isConnected.mockReturnValue(true);
 
     render(<MainLayout />);
 
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    // Visibility handler waits 100ms before calling ensureRunning (iOS Safari workaround)
     await act(async () => {
-      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
-      document.dispatchEvent(new Event('visibilitychange'));
+      jest.advanceTimersByTime(100);
     });
 
     expect(audio.ensureRunning).toHaveBeenCalled();
+    jest.useRealTimers();
   });
 
   test('visibilitychange does nothing when not connected', async () => {
+    jest.useFakeTimers();
     audio.isConnected.mockReturnValue(false);
 
     render(<MainLayout />);
 
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+
     await act(async () => {
-      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
-      document.dispatchEvent(new Event('visibilitychange'));
+      jest.advanceTimersByTime(100);
     });
 
     expect(audio.ensureRunning).not.toHaveBeenCalled();
+    jest.useRealTimers();
   });
 });
