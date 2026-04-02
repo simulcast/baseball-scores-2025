@@ -41,9 +41,14 @@ export async function GET(request) {
 
     cache = { data: games, timestamp: now };
 
-    return Response.json({ games });
+    return Response.json({ games }, {
+      headers: { 'Cache-Control': 's-maxage=5, stale-while-revalidate=30' },
+    });
   } catch (error) {
     console.error('getGames error:', error.message);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message }, {
+      status: 500,
+      headers: { 'Cache-Control': 's-maxage=5' },
+    });
   }
 }
