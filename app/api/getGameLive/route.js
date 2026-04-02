@@ -38,9 +38,14 @@ export async function GET(request) {
 
     cache = { gamePk, data: trimmed, timestamp: now };
 
-    return Response.json({ game: trimmed });
+    return Response.json({ game: trimmed }, {
+      headers: { 'Cache-Control': 's-maxage=1, stale-while-revalidate=10' },
+    });
   } catch (error) {
     console.error('getGameLive error:', error.message);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message }, {
+      status: 500,
+      headers: { 'Cache-Control': 's-maxage=5' },
+    });
   }
 }

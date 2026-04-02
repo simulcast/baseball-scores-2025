@@ -85,6 +85,45 @@ describe('usePollingLoop', () => {
     expect(pollFn).toHaveBeenCalledTimes(1);
   });
 
+  it('uses 30s backoff after error', async () => {
+    const pollFn = jest.fn().mockRejectedValue(new Error('fail'));
+
+    renderHook(() => usePollingLoop(pollFn, { interval: 5000 }));
+    await act(async () => {});
+    expect(pollFn).toHaveBeenCalledTimes(1);
+
+    // Normal interval (5s) should NOT trigger a retry
+    await act(async () => { jest.advanceTimersByTime(5000); });
+    await act(async () => {});
+    expect(pollFn).toHaveBeenCalledTimes(1);
+
+    // 30s backoff should trigger retry
+    await act(async () => { jest.advanceTimersByTime(25000); });
+    await act(async () => {});
+    expect(pollFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('resets to normal interval after error recovery', async () => {
+    const pollFn = jest.fn()
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValue();
+
+    renderHook(() => usePollingLoop(pollFn, { interval: 5000 }));
+    // First call: error
+    await act(async () => {});
+    expect(pollFn).toHaveBeenCalledTimes(1);
+
+    // Wait 30s for backoff retry — this one succeeds
+    await act(async () => { jest.advanceTimersByTime(30000); });
+    await act(async () => {});
+    expect(pollFn).toHaveBeenCalledTimes(2);
+
+    // Normal interval should work again (not 30s)
+    await act(async () => { jest.advanceTimersByTime(5000); });
+    await act(async () => {});
+    expect(pollFn).toHaveBeenCalledTimes(3);
+  });
+
   it('sets pollError on pollFn error', async () => {
     const pollFn = jest.fn().mockRejectedValue(new Error('boom'));
 

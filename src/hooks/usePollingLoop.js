@@ -13,6 +13,7 @@ export function usePollingLoop(pollFn, { interval, enabled = true }) {
   const setPollError = useGameStore((s) => s.setPollError);
   const pollFnRef = useRef(pollFn);
   pollFnRef.current = pollFn;
+  const hasErrorRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -23,11 +24,13 @@ export function usePollingLoop(pollFn, { interval, enabled = true }) {
     async function poll() {
       try {
         await pollFnRef.current();
+        hasErrorRef.current = false;
       } catch (err) {
         console.error('[usePollingLoop]', err);
         if (mounted) setPollError(err.message);
+        hasErrorRef.current = true;
       } finally {
-        if (mounted) timer = setTimeout(poll, interval);
+        if (mounted) timer = setTimeout(poll, hasErrorRef.current ? 30000 : interval);
       }
     }
 
