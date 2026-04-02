@@ -15,9 +15,9 @@
  */
 import * as Tone from 'tone';
 
-const BREATH_VOLUME = 0.055;
-const HISS_VOLUME = 0.02;
-const SURFACE_VOLUME = 0.012;
+const BREATH_VOLUME = 0.09;
+const HISS_VOLUME = 0.035;
+const SURFACE_VOLUME = 0.02;
 const CRACKLE_VOLUME = 0.04;
 const LFO_MIN_FREQ = 0.08;
 const LFO_MAX_FREQ = 0.125;

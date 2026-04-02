@@ -67,7 +67,7 @@ export class PadLayer {
     });
 
     // Volume control — pad sits underneath pulse pools
-    this.gain = new Tone.Gain(0.09);
+    this.gain = new Tone.Gain(0.18);
 
     // Wire: synth → vibrato → chorus → gain → panner → output
     this.synth.connect(this.vibrato);
@@ -128,7 +128,7 @@ export class PadLayer {
       this._startVoices(harmonyState.chordTones);
 
       // Fade in
-      this.gain.gain.rampTo(0.09, duration * 0.5);
+      this.gain.gain.rampTo(0.18, duration * 0.5);
 
       this._crossfading = false;
       this._resetIdleDrift();

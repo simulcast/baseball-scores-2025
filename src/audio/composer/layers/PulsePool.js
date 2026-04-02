@@ -71,7 +71,7 @@ export class PulsePool {
     this.running = true;
 
     // Fade in
-    this.gain.gain.rampTo(0.09, fadeIn);
+    this.gain.gain.rampTo(0.18, fadeIn);
 
     // Start the loop
     this.loop.start(Tone.now());

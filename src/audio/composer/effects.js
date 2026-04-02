@@ -3,7 +3,7 @@
  * All layers route through this bus before reaching the master gain.
  *
  * Signal flow:
- *   voices → bus → saturation → tapeFilter (LP 4.8kHz) → Reverb → Compressor → makeupGain (+4dB) → Limiter (-1dB) → output
+ *   voices → bus → saturation → tapeFilter (LP 4.8kHz) → Reverb → Compressor → makeupGain (+8dB) → Limiter (-1dB) → output
  *   voices → delaySend → PingPongDelay → bus
  *
  * Saturation adds even harmonics (tape warmth).
@@ -40,14 +40,14 @@ export class EffectsChain {
 
     // Compressor: tighter glue — catches reverb tail buildup and EventVoice transients
     this.compressor = new Tone.Compressor({
-      threshold: -18,
+      threshold: -14,
       ratio: 3,
       attack: 0.03,
       release: 0.25,
     });
 
-    // Makeup gain: restore loudness lost from tighter compression (+4dB)
-    this.makeupGain = new Tone.Gain(1.58);
+    // Makeup gain: restore loudness lost from compression (+8dB)
+    this.makeupGain = new Tone.Gain(2.5);
 
     // Limiter: brickwall ceiling at -1dB (intersample peak margin for phone DACs/Bluetooth)
     this.limiter = new Tone.Limiter(-1);

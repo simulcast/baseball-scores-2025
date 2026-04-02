@@ -43,7 +43,7 @@ describe('EffectsChain', () => {
       'Filter',         // tapeFilter
       'Reverb',         // reverb
       'Compressor',     // compressor
-      'Gain(1.58)',     // makeupGain
+      'Gain(2.5)',      // makeupGain
       'Limiter',        // limiter
     ]);
     // Last node connects to output
