@@ -47,7 +47,7 @@ export class EventVoice {
     });
 
     // Gain for volume control — events punctuate, not dominate
-    this.gain = new Tone.Gain(0.12);
+    this.gain = new Tone.Gain(0.22);
 
     // Wire: synths → gain → panner → output
     this.bellSynth.connect(this.gain);
